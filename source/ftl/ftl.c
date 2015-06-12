@@ -10,9 +10,10 @@
 /*============================================================================*/
 /* #include region: include std lib & other head file                         */
 /*============================================================================*/
+#include "disk_config.h"
 #include "flash_interface.h"
 #include "ftl.h"
-
+#include "table.h"
 /*============================================================================*/
 /* #define region: constant & MACRO defined here                              */
 /*============================================================================*/
@@ -40,7 +41,7 @@ U32 ftl_llf(void)
     table_llf_vbt();
     table_llf_pbt();
     table_llf_pmt();
-
+    return 0;
 }
 
 

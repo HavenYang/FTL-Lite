@@ -12,6 +12,7 @@
 /*============================================================================*/
 /* #include region: include std lib & other head file                         */
 /*============================================================================*/
+#include "flash_interface.h"
 
 /*============================================================================*/
 /* #define region: constant & MACRO defined here                              */
@@ -20,7 +21,7 @@
 /* page management table item */
 struct pmt_item_t
 {
-    struct phy_flash_addr_t pfa;
+    struct flash_addr_t vir_flash_addr;
 };
 
 /* pmt page */
@@ -31,22 +32,53 @@ struct pmt_page_t
 
 struct pmt_t
 {
-    struct pmt_page_t page[PMT_PAGE_CNT];
+    struct pmt_page_t page[PMT_PAGE_IN_PU];
 };
 
 
-/* virtual block table : point to physical block information */
+/* virtual block information table : point to physical block  */
+struct vbt_item_t
+{
+    union
+    {
+        U32 dw[2];
+        struct
+        {
+            U32 phy_block_addr:16;
+            U32 lpn_dirty_count:16;
+
+            U32 reserved; //to be detail
+        };
+    };
+};
+
 struct vbt_t
 {
-    
+    struct vbt_item_t item[BLK_PER_PLN];
 };
 
 
-/* physical block table : point to virtual block information */
+/* physical block information table : point to virtual block  */
+struct pbt_item_t
+{
+    union
+    {
+        U32 dw[2];
+        struct
+        {
+            U32 virtual_block_addr:16;
+            U32 block_erase_count:16;
+
+            U32 reserved;   //to be detail
+        };
+    };
+};
+
 struct pbt_t
 {
-    
+    struct pbt_item_t item[BLK_PER_PLN];
 };
+
 
 /*============================================================================*/
 /* #typedef region: global data structure & data type typedefed here          */
@@ -55,6 +87,13 @@ struct pbt_t
 /*============================================================================*/
 /* function declaration region: declare global function prototype             */
 /*============================================================================*/
+void table_llf_bbt(void);
+
+void table_llf_vbt(void);
+
+void table_llf_pbt(void);
+
+void table_llf_pmt(void);
 
 
 #endif

@@ -9,6 +9,10 @@
 #ifndef _BASEDEFINE_H
 #define _BASEDEFINE_H
 
+#ifdef SIM
+#include <stdio.h>
+#endif
+
 /*some type definitions*/
 typedef unsigned char    U8;
 typedef unsigned short   U16;
@@ -73,6 +77,13 @@ typedef S32 BOOL;
 #define BYTE_2(dw)          (((dw)>>16) & 0xff)
 #define BYTE_3(dw)          (((dw)>>24) & 0xff)
 
+#define fatalerror()     do {\
+printf("fatalerror: %s, line %d\n",__FILE__,__LINE__); \
+while(1);\
+}while(0)
+
+
+#define assert_null_pointer(p)  if (NULL == (p)) {fatalerror();}
 
 #endif
 /*====================End of this head file===================================*/

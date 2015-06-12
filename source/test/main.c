@@ -1,8 +1,8 @@
 /*
-* File Name    : table.c
+* File Name    : main.c
 * Discription  : 
 * CreateAuthor : Haven Yang
-* CreateDate   : 2015.6.11
+* CreateDate   : 2015.6.12
 *===============================================================================
 * Modify Record:
 *=============================================================================*/
@@ -10,14 +10,23 @@
 /*============================================================================*/
 /* #include region: include std lib & other head file                         */
 /*============================================================================*/
+#include <stdio.h>
+#include <stdlib.h>
+
 #include "basedefine.h"
 #include "disk_config.h"
-#include "env_sim.h"
 #include "table.h"
 
 /*============================================================================*/
 /* #define region: constant & MACRO defined here                              */
 /*============================================================================*/
+
+struct tables
+{
+    struct pmt_t pmt;
+    struct pbt_t pbt;
+    struct vbt_t vbt;
+};
 
 /*============================================================================*/
 /* extern region: extern global variable & function prototype                 */
@@ -26,10 +35,8 @@
 /*============================================================================*/
 /* global region: declare global variable                                     */
 /*============================================================================*/
-//struct bbt_t *bbt[MAX_PU_NUM];
-struct vbt_t *vbt[MAX_PU_NUM];
-struct pbt_t *pbt[MAX_PU_NUM];
-struct pmt_t *pmt[MAX_PU_NUM];
+U8 *g_device_dram_addr;
+U32 g_device_dram_size;
 
 
 /*============================================================================*/
@@ -40,81 +47,25 @@ struct pmt_t *pmt[MAX_PU_NUM];
 /* main code region: function implement                                       */
 /*============================================================================*/
 
-void table_llf_bbt(void)
+U32 sim_dram_init(void)
 {
-    //bbt = (struct bbt_t *)get_bbt_baseaddr();
+    g_device_dram_size = (sizeof(struct tables)) * MAX_PU_NUM;
+    g_device_dram_addr = (U8*)malloc(g_device_dram_size);
+
+    assert_null_pointer(g_device_dram_addr);
+    return g_device_dram_size;
 }
 
-void table_llf_vbt(void)
+U32 test_env_init(void)
 {
-    U32 pu;
-    U32 block;
-    
-    U32 vbt_base = get_vbt_baseaddr();
-
-    for (pu = 0; pu < MAX_PU_NUM; pu++)
-    {
-        vbt[pu] = (struct vbt_t *)(vbt_base + sizeof(struct vbt_t) * pu);
-        
-        for (block = 0; block < BLK_PER_PLN; block++)
-        {
-            vbt[pu]->item[block].phy_block_addr = 0xffff;
-            vbt[pu]->item[block].lpn_dirty_count = 0;
-            vbt[pu]->item[block].reserved = 0;
-        }
-    }
+    sim_dram_init();
+    return 0;
 }
 
-void table_llf_pbt(void)
+int _tmain(int argc, char* argv)
 {
-    U32 pu;
-    U32 block;
-    
-    U32 pbt_base = get_pbt_baseaddr();
-
-    for (pu = 0; pu < MAX_PU_NUM; pu++)
-    {
-        pbt[pu] = (struct pbt_t *)(pbt_base + sizeof(struct pbt_t) * pu);
-        
-        for (block = 0; block < BLK_PER_PLN; block++)
-        {
-            pbt[pu]->item[block].virtual_block_addr = 0xffff;
-            pbt[pu]->item[block].block_erase_count = 0;
-            pbt[pu]->item[block].reserved = 0;
-        }
-    }
+    return 0;
 }
-
-void table_init_pmt_page(struct pmt_page_t *pmt_page)
-{
-    U32 lpn;
-
-    for (lpn = 0; lpn < LPN_CNT_PER_PMTPAGE; lpn++)
-    {
-        pmt_page->item[lpn].vir_flash_addr.ppn = 0xfffffffful;
-    }
-}
-
-void table_llf_pmt(void)
-{
-    U32 pu;
-    U32 page;
-    
-    U32 pmt_base = get_pmt_baseaddr();
-
-    for (pu = 0; pu < MAX_PU_NUM; pu++)
-    {
-        pmt[pu] = (struct pmt_t *)(pmt_base + sizeof(struct pmt_t) * pu);
-        
-        for (page = 0; page < PMT_PAGE_IN_PU; page++)
-        {
-            table_init_pmt_page(&pmt[pu]->page[page]);
-        }
-    }
-}
-
-
-
 
 /*====================End of this file========================================*/
 

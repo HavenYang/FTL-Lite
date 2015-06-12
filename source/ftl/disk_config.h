@@ -56,12 +56,13 @@
 #define LPN_CNT_PER_PMTPAGE     (PMT_PAGE_SIZE / PMT_ITEM_SIZE)
 
 // 32KB * 512 * 1024 = 16GB per PU
-#define MAX_PU_NUM                8
-//#define MAX_LPN_IN_DISK         ((PG_PER_BLK * BLK_PER_PLN * MAX_PU_NUM) / (LPN_PER_BUF))
-#define MAX_LPN_IN_DISK         (MAX_PU_NUM << (PG_PER_BLK_BITS + BLK_PER_PLN_BITS - LPN_PER_BUF_BITS))
+#define LPN_IN_PU               (1 << (PG_PER_BLK_BITS + BLK_PER_PLN_BITS - LPN_PER_BUF_BITS))
+
+#define MAX_PU_NUM              8
+#define MAX_LPN_IN_DISK         (MAX_PU_NUM * LPN_IN_PU)
 #define MAX_LBA_IN_DISK         (MAX_LPN_IN_DISK << SEC_PER_LPN_BITS)
 
-
+#define PMT_PAGE_IN_PU          (LPN_IN_PU/LPN_CNT_PER_PMTPAGE)
 #define PMT_PAGE_CNT            (MAX_LPN_IN_DISK/LPN_CNT_PER_PMTPAGE)
 
 

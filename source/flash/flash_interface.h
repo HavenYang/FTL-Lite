@@ -12,6 +12,7 @@
 /*============================================================================*/
 /* #include region: include std lib & other head file                         */
 /*============================================================================*/
+#include "basedefine.h"
 
 /*============================================================================*/
 /* #define region: constant & MACRO defined here                              */
@@ -30,7 +31,7 @@
 /* #typedef region: global data structure & data type typedefed here          */
 /*============================================================================*/
 
-struct phy_flash_addr_t
+struct flash_addr_t
 {
     union
     {

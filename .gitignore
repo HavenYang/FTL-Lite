@@ -1,3 +1,11 @@
+#directories
+Debug/
+Release/
+
+#Project files
+FTL-Lite.*
+Sysinfo.ini
+
 # Object files
 *.o
 *.ko
