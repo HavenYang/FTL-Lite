@@ -26,6 +26,8 @@ struct tables
     struct pmt_t pmt;
     struct pbt_t pbt;
     struct vbt_t vbt;
+    struct rpmt_t rpmt;
+    struct pu_info_t puinfo;
 };
 
 /*============================================================================*/
@@ -35,8 +37,8 @@ struct tables
 /*============================================================================*/
 /* global region: declare global variable                                     */
 /*============================================================================*/
-U8 *g_device_dram_addr;
-U32 g_device_dram_size;
+U8 *g_device_dram_addr = NULL;
+U32 g_device_dram_size = 0;
 
 
 /*============================================================================*/
@@ -62,7 +64,7 @@ U32 test_env_init(void)
     return 0;
 }
 
-int _tmain(int argc, char* argv)
+int main(int argc, char* argv)
 {
     return 0;
 }

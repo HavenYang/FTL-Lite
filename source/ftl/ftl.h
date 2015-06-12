@@ -25,12 +25,31 @@
 #define VBT_BASE_ADDR       TABLE_BASE_ADDR
 #define PBT_BASE_ADDR       (VBT_BASE_ADDR + (sizeof(struct vbt_t) * MAX_PU_NUM))
 #define PMT_BASE_ADDR       (PBT_BASE_ADDR + (sizeof(struct pbt_t) * MAX_PU_NUM))
-#define RSVE_DRAM_ADDR      (PMT_BASE_ADDR + (sizeof(struct pmt_t) * MAX_PU_NUM))
+#define RPMT_BASE_ADDR      (PMT_BASE_ADDR + (sizeof(struct pmt_t) * MAX_PU_NUM))
+#define PUINFO_BASE_ADDR    (RPMT_BASE_ADDR + (sizeof(struct rpmt_t) * MAX_PU_NUM))
+#define RSVE_DRAM_ADDR      (PUINFO_BASE_ADDR + (sizeof(struct pu_info_t) * MAX_PU_NUM))
 
 
 /*============================================================================*/
 /* #typedef region: global data structure & data type typedefed here          */
 /*============================================================================*/
+typedef enum _efr
+{
+    FRT_SEQ_WRITE = 0,
+    FRT_SEQ_READ,
+    FRT_RAN_WRITE,
+    FRT_RAN_READ,
+    FRT_IVLD,
+}EFRT;
+
+/* ftl request */
+struct ftl_req
+{
+    EFRT    request_type;
+    U32     buffer_addr;
+    U32     lpn_count;
+    U32     lpn_list[LPN_PER_BUF];
+};
 
 
 /*============================================================================*/

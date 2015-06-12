@@ -18,7 +18,24 @@
 /* #define region: constant & MACRO defined here                              */
 /*============================================================================*/
 
-/* page management table item */
+typedef enum write_type_e
+{
+    WRITE_TYPE_SEQ = 0,
+    WRITE_TYPE_RND,
+    WRITE_TYPE_ALL
+}EWT;
+
+typedef enum block_status_e
+{
+    BLOCK_STATUS_FREE = 0,
+    BLOCK_STATUS_ALLOCATED,
+    BLOCK_STATUS_GC,
+    BLOCK_STATUS_BADBLCOK,
+    BLOCK_STATUS_ALL,
+}EBS;
+
+
+/* page management table item , lpn -> vir_flash_addr */
 struct pmt_item_t
 {
     struct flash_addr_t vir_flash_addr;
@@ -35,6 +52,16 @@ struct pmt_t
     struct pmt_page_t page[PMT_PAGE_IN_PU];
 };
 
+/* reverse pmt table, vir_flash_addr -> lpn */
+struct rpmt_item_t
+{
+    U32 lpn[LPN_IN_BLK];
+};
+
+struct rpmt_t
+{
+    struct rpmt_item_t block[BLK_PER_PLN];
+};
 
 /* virtual block information table : point to physical block  */
 struct vbt_item_t
@@ -80,6 +107,22 @@ struct pbt_t
 };
 
 
+struct block_info_t
+{
+    EBS status;
+    U32 erase_count;
+    U32 free_page_count;
+};
+
+struct pu_info_t
+{
+    U32 curr_block:16;
+    U32 block_count:16;
+    U32 free_block_count:16;
+    U32 bad_block_count:16;
+    struct block_info_t block_info[BLK_PER_PLN];
+};
+
 /*============================================================================*/
 /* #typedef region: global data structure & data type typedefed here          */
 /*============================================================================*/
@@ -94,6 +137,14 @@ void table_llf_vbt(void);
 void table_llf_pbt(void);
 
 void table_llf_pmt(void);
+
+void init_pu_info(void);
+
+
+struct flash_addr_t flash_alloc_page(U32 pu);
+struct flash_addr_t get_phy_flash_addr(struct flash_addr_t vir_addr);
+U32 flash_alloc_block(U32 pu);
+
 
 
 #endif

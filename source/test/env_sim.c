@@ -51,6 +51,16 @@ U32 get_vbt_baseaddr(void)
     return VBT_BASE_ADDR;
 }
 
+U32 get_rpmt_baseaddr(void)
+{
+    return RPMT_BASE_ADDR;
+}
+
+U32 get_puinfo_baseaddr(void)
+{
+    return PUINFO_BASE_ADDR;
+}
+
 
 
 /*====================End of this file========================================*/

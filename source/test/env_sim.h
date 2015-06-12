@@ -28,6 +28,8 @@
 U32 get_pmt_baseaddr(void);
 U32 get_pbt_baseaddr(void);
 U32 get_vbt_baseaddr(void);
+U32 get_rpmt_baseaddr(void);
+U32 get_puinfo_baseaddr(void);
 
 #endif
 /*====================End of this head file===================================*/
