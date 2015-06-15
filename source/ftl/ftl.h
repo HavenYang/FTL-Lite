@@ -30,10 +30,19 @@
 #define RSVE_DRAM_ADDR      (PUINFO_BASE_ADDR + (sizeof(struct pu_info_t) * MAX_PU_NUM))
 
 
+enum{
+    SUCCESS            = 0,
+    FLASH_READ_ERROR,
+    FLASH_WRITE_ERROR,
+    FLASH_ERASE_ERROR,
+    UNKOWN_ERROR,
+};
+
 /*============================================================================*/
 /* #typedef region: global data structure & data type typedefed here          */
 /*============================================================================*/
-typedef enum _efr
+/* ftl request type */
+typedef enum _efrt
 {
     FRT_SEQ_WRITE = 0,
     FRT_SEQ_READ,
@@ -43,7 +52,7 @@ typedef enum _efr
 }EFRT;
 
 /* ftl request */
-struct ftl_req
+struct ftl_req_t
 {
     EFRT    request_type;
     U32     buffer_addr;
@@ -55,6 +64,8 @@ struct ftl_req
 /*============================================================================*/
 /* function declaration region: declare global function prototype             */
 /*============================================================================*/
+U32 get_pu_from_lpn(U32 lpn);
+U32 table_update_pmt(U32 lpn, const struct flash_addr_t *new_vir_addr);
 
 
 #endif

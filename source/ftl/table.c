@@ -271,5 +271,56 @@ struct flash_addr_t flash_alloc_page(U32 pu)
     return target_vir_addr;
 }
 
+U32 table_update_rpmt(U32 lpn, const struct flash_addr_t *old_addr, const struct flash_addr_t *new_addr)
+{
+    struct rpmt_item_t *new_rpmt;
+    struct rpmt_item_t *old_rpmt;
+    
+    assert_null_pointer(old_addr);
+    assert_null_pointer(new_addr);
+
+    if (old_addr->pu_index != new_addr->pu_index)
+    {
+        fatalerror();
+    }
+
+    new_rpmt = &rpmt[new_addr->pu_index]->block[new_addr->block_in_pu];
+    old_rpmt = &rpmt[old_addr->pu_index]->block[old_addr->block_in_pu];
+
+    old_rpmt->lpn[old_addr->page_in_block * LPN_PER_BUF + old_addr->lpn_in_page] = 0xfffffffful;
+    new_rpmt->lpn[new_addr->page_in_block * LPN_PER_BUF + new_addr->lpn_in_page] = lpn;
+
+    vbt[old_addr->pu_index]->item[old_addr->block_in_pu].lpn_dirty_count++;
+
+    return SUCCESS;
+}
+
+
+U32 table_update_pmt(U32 lpn, const struct flash_addr_t *new_vir_addr)
+{
+    U32 pu;
+    U32 lpn_in_pu;
+    U32 pmtpage_in_pu;
+    U32 offset_in_mptpage;
+    struct flash_addr_t *old_vir_addr;
+
+    pu = get_pu_from_lpn(lpn);
+
+    lpn_in_pu = ((lpn/PU_NUM) & (~LPN_PER_BUF_MSK)) + (lpn % LPN_PER_BUF);
+
+    pmtpage_in_pu = lpn_in_pu/LPN_CNT_PER_PMTPAGE;
+    
+    offset_in_mptpage = lpn_in_pu%LPN_CNT_PER_PMTPAGE;
+
+    old_vir_addr = &pmt[pu]->page[pmtpage_in_pu].item[offset_in_mptpage].vir_flash_addr;
+
+    table_update_rpmt(lpn, old_vir_addr, new_vir_addr);
+
+    old_vir_addr->ppn = new_vir_addr->ppn;
+
+    return 0;
+}
+
+
 /*====================End of this file========================================*/
 

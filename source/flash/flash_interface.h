@@ -27,9 +27,11 @@
 #define PG_PER_BLK_MSK            (PG_PER_BLK - 1)
 
 
+
 /*============================================================================*/
 /* #typedef region: global data structure & data type typedefed here          */
 /*============================================================================*/
+
 
 struct flash_addr_t
 {
@@ -46,11 +48,19 @@ struct flash_addr_t
     };
 };
 
+struct flash_req_t
+{
+    U32 data_buffer_addr;
+    U32 spare_buffer_addr;
+    U32 data_length;
+    U32 data_offset;
+};
+
 /*============================================================================*/
 /* function declaration region: declare global function prototype             */
 /*============================================================================*/
 
-
+U32 flash_write(struct flash_addr_t *phy_addr, struct flash_req_t *flash_req);
 
 
 #endif
