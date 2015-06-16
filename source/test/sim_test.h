@@ -16,6 +16,8 @@
 /*============================================================================*/
 /* #define region: constant & MACRO defined here                              */
 /*============================================================================*/
+#define SIM_SUCCESS 0
+#define SIM_FAIL    1
 
 /*============================================================================*/
 /* #typedef region: global data structure & data type typedefed here          */
@@ -25,11 +27,8 @@
 /* function declaration region: declare global function prototype             */
 /*============================================================================*/
 
-U32 get_pmt_baseaddr(void);
-U32 get_pbt_baseaddr(void);
-U32 get_vbt_baseaddr(void);
-U32 get_rpmt_baseaddr(void);
-U32 get_puinfo_baseaddr(void);
+void run_test_cases(void);
+
 
 #endif
 /*====================End of this head file===================================*/

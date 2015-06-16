@@ -21,6 +21,7 @@
 /*============================================================================*/
 /* extern region: extern global variable & function prototype                 */
 /*============================================================================*/
+extern U8 *g_device_dram_addr;
 
 /*============================================================================*/
 /* global region: declare global variable                                     */
@@ -35,6 +36,32 @@ LOCAL struct ftl_req_t unfull_write_req;
 /*============================================================================*/
 /* main code region: function implement                                       */
 /*============================================================================*/
+
+
+U32 get_pmt_baseaddr(void)
+{
+    return PMT_BASE_ADDR;
+}
+
+U32 get_pbt_baseaddr(void)
+{
+    return PBT_BASE_ADDR;
+}
+
+U32 get_vbt_baseaddr(void)
+{
+    return VBT_BASE_ADDR;
+}
+
+U32 get_rpmt_baseaddr(void)
+{
+    return RPMT_BASE_ADDR;
+}
+
+U32 get_puinfo_baseaddr(void)
+{
+    return PUINFO_BASE_ADDR;
+}
 
 
 
@@ -111,7 +138,6 @@ U32 ftl_write(const struct ftl_req_t *write_request)
     flash_write_req.spare_buffer_addr = 0; //to be continue
 
     flash_write_req.data_length = write_request->lpn_count * LPN_SIZE;
-    flash_write_req.data_offset = 0;
     
     return flash_write(&phy_addr, &flash_write_req);
 }
@@ -138,7 +164,6 @@ U32 ftl_read(const struct ftl_req_t *read_request)
         flash_read_req.spare_buffer_addr = 0; //to be continue
 
         flash_read_req.data_length = read_request->lpn_count * LPN_SIZE;
-        flash_read_req.data_offset = (phy_addr.lpn_in_page & LPN_PER_BUF_MSK) * LPN_SIZE;
         
         return flash_read(&phy_addr, &flash_read_req);
     }

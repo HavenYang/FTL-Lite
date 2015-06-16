@@ -13,6 +13,7 @@
 /* #include region: include std lib & other head file                         */
 /*============================================================================*/
 #include "basedefine.h"
+#include "disk_config.h"
 
 /*============================================================================*/
 /* #define region: constant & MACRO defined here                              */
@@ -53,7 +54,6 @@ struct flash_req_t
     U32 data_buffer_addr;
     U32 spare_buffer_addr;
     U32 data_length;
-    U32 data_offset;
 };
 
 /*============================================================================*/

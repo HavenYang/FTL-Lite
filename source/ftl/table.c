@@ -10,9 +10,10 @@
 /*============================================================================*/
 /* #include region: include std lib & other head file                         */
 /*============================================================================*/
+#include <stdio.h>
+
 #include "basedefine.h"
 #include "disk_config.h"
-#include "env_sim.h"
 #include "table.h"
 #include "ftl.h"
 #include "flash_interface.h"
@@ -81,7 +82,7 @@ void table_llf_pbt(void)
         
         for (block = 0; block < BLK_PER_PLN; block++)
         {
-            pbt[pu]->item[block].virtual_block_addr = block; /* consider no bad block */
+            pbt[pu]->item[block].virtual_block_addr = block; /* suppose no bad block */
             pbt[pu]->item[block].block_erase_count = 0;
             pbt[pu]->item[block].reserved = 0;
         }

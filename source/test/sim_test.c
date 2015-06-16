@@ -12,6 +12,8 @@
 /*============================================================================*/
 #include "basedefine.h"
 #include "disk_config.h"
+#include "flash_interface.h"
+#include "sim_flash.h"
 #include "table.h"
 #include "ftl.h"
 
@@ -22,7 +24,6 @@
 /*============================================================================*/
 /* extern region: extern global variable & function prototype                 */
 /*============================================================================*/
-extern U8 *g_device_dram_addr;
 
 /*============================================================================*/
 /* global region: declare global variable                                     */
@@ -36,31 +37,13 @@ extern U8 *g_device_dram_addr;
 /* main code region: function implement                                       */
 /*============================================================================*/
 
-U32 get_pmt_baseaddr(void)
+void sim_write_whole_disk(void)
 {
-    return PMT_BASE_ADDR;
+    ;
 }
 
-U32 get_pbt_baseaddr(void)
-{
-    return PBT_BASE_ADDR;
-}
-
-U32 get_vbt_baseaddr(void)
-{
-    return VBT_BASE_ADDR;
-}
-
-U32 get_rpmt_baseaddr(void)
-{
-    return RPMT_BASE_ADDR;
-}
-
-U32 get_puinfo_baseaddr(void)
-{
-    return PUINFO_BASE_ADDR;
-}
-
+void run_test_cases(void)
+{}
 
 
 /*====================End of this file========================================*/

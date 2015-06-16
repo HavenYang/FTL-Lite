@@ -12,14 +12,19 @@
 /*============================================================================*/
 #include <stdio.h>
 #include <stdlib.h>
-
+#include <memory.h>
 #include "basedefine.h"
 #include "disk_config.h"
 #include "table.h"
+#include "sim_flash.h"
+#include "sim_test.h"
+
 
 /*============================================================================*/
 /* #define region: constant & MACRO defined here                              */
 /*============================================================================*/
+
+
 
 struct tables
 {
@@ -55,18 +60,60 @@ U32 sim_dram_init(void)
     g_device_dram_addr = (U8*)malloc(g_device_dram_size);
 
     assert_null_pointer(g_device_dram_addr);
+
+    if (NULL == g_device_dram_addr)
+    {
+        printf("malloc sim dram memory failed!\n");
+        return 0;
+    }
+    else
+    {
+        printf("sim dram memory size : 0x%x \n", g_device_dram_addr);
+    }
+
+    memset(g_device_dram_addr, 0, g_device_dram_size);
+    
     return g_device_dram_size;
+}
+
+void sim_dram_exit(void)
+{
+    if (NULL != g_device_dram_addr)
+    {
+        free(g_device_dram_addr);
+        g_device_dram_addr = NULL;
+    }
 }
 
 U32 test_env_init(void)
 {
-    sim_dram_init();
-    return 0;
+    if (0 == sim_dram_init())
+    {
+        return SIM_FAIL;
+    }
+
+    if (0 == sim_flash_init())
+    {
+        sim_dram_exit();
+        return SIM_FAIL;
+    }
+
+    return SIM_SUCCESS;
+}
+
+void test_env_exit(void)
+{
+    sim_dram_exit();
+    sim_flash_exit();
 }
 
 int main(int argc, char* argv)
 {
-    return 0;
+    test_env_init();
+
+    run_test_cases();
+
+    test_env_exit();
 }
 
 /*====================End of this file========================================*/

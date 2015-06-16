@@ -65,6 +65,12 @@ struct ftl_req_t
 /*============================================================================*/
 /* function declaration region: declare global function prototype             */
 /*============================================================================*/
+U32 get_pmt_baseaddr(void);
+U32 get_pbt_baseaddr(void);
+U32 get_vbt_baseaddr(void);
+U32 get_rpmt_baseaddr(void);
+U32 get_puinfo_baseaddr(void);
+
 U32 get_pu_from_lpn(U32 lpn);
 U32 table_update_pmt(U32 lpn, const struct flash_addr_t *new_vir_addr);
 U32 addr_valid(const struct flash_addr_t *flash_addr);

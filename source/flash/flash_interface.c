@@ -13,6 +13,7 @@
 #include "flash_interface.h"
 #include "disk_config.h"
 #include "ftl.h"
+#include "sim_flash.h"
 
 /*============================================================================*/
 /* #define region: constant & MACRO defined here                              */
@@ -37,17 +38,47 @@
 
 U32 flash_write(struct flash_addr_t *phy_addr, struct flash_req_t *write_req)
 {
-    return SUCCESS;
+    U32 result;
+    
+    if (BUF_SIZE == write_req->data_length)
+    {
+        result = sim_flash_write_page(phy_addr, write_req);
+    }
+    else if (LPN_SIZE == write_req->data_length)
+    {
+        result = sim_flash_write_lpn(phy_addr, write_req);
+    }
+    else
+    {
+        result = ERROR_FLASH_WRITE;
+    }
+
+    return result;
 }
 
 U32 flash_read(struct flash_addr_t *phy_addr, struct flash_req_t *read_req)
 {
-    return SUCCESS;
+    U32 result;
+    
+    if (BUF_SIZE == read_req->data_length)
+    {
+        result = sim_flash_read_page(phy_addr, read_req);
+    }
+    else if (LPN_SIZE == read_req->data_length)
+    {
+        result = sim_flash_read_lpn(phy_addr, read_req);
+    }
+    else
+    {
+        result = ERROR_FLASH_READ;
+    }
+
+    return result;
 }
 
 U32 flash_erase(U32 pu, U32 phy_block_addr)
 {
-    return SUCCESS;
+    return sim_flash_erase_block(pu, phy_block_addr);
 }
 
 
