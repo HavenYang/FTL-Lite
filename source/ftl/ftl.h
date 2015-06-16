@@ -32,10 +32,11 @@
 
 enum{
     SUCCESS            = 0,
-    FLASH_READ_ERROR,
-    FLASH_WRITE_ERROR,
-    FLASH_ERASE_ERROR,
-    UNKOWN_ERROR,
+    ERROR_FLASH_READ,
+    ERROR_FLASH_WRITE,
+    ERROR_FLASH_ERASE,
+    ERROR_NO_FLASH_PAGE,
+    ERROR_UNKNOWN,
 };
 
 /*============================================================================*/
@@ -66,6 +67,8 @@ struct ftl_req_t
 /*============================================================================*/
 U32 get_pu_from_lpn(U32 lpn);
 U32 table_update_pmt(U32 lpn, const struct flash_addr_t *new_vir_addr);
+U32 addr_valid(const struct flash_addr_t *flash_addr);
+U32 addr_invalid(const struct flash_addr_t *flash_addr);
 
 
 #endif

@@ -175,19 +175,19 @@ void init_pu_info(void)
 }
 
 
-struct flash_addr_t get_phy_flash_addr(struct flash_addr_t vir_addr)
+void vir_to_phy_addr(const struct flash_addr_t *vir_addr_from, struct flash_addr_t *phy_addr_to)
 {
-    struct flash_addr_t phy_addr;
     U32 pu;
     U32 vir_block;
-    
-    phy_addr = vir_addr;
-    pu = vir_addr.pu_index;
-    vir_block = vir_addr.block_in_pu;
 
-    phy_addr.block_in_pu = vbt[pu]->item[vir_block].phy_block_addr;
+    phy_addr_to->ppn = vir_addr_from->ppn;
 
-    return phy_addr;
+    if (addr_valid(vir_addr_from))
+    {
+        pu = vir_addr_from->pu_index;
+        vir_block = vir_addr_from->block_in_pu;
+        phy_addr_to->block_in_pu = vbt[pu]->item[vir_block].phy_block_addr;
+    }
 }
 
 U32 flash_alloc_block(U32 pu)
@@ -295,14 +295,12 @@ U32 table_update_rpmt(U32 lpn, const struct flash_addr_t *old_addr, const struct
     return SUCCESS;
 }
 
-
-U32 table_update_pmt(U32 lpn, const struct flash_addr_t *new_vir_addr)
+struct flash_addr_t *get_loc_in_pmt(U32 lpn)
 {
     U32 pu;
     U32 lpn_in_pu;
     U32 pmtpage_in_pu;
     U32 offset_in_mptpage;
-    struct flash_addr_t *old_vir_addr;
 
     pu = get_pu_from_lpn(lpn);
 
@@ -312,13 +310,31 @@ U32 table_update_pmt(U32 lpn, const struct flash_addr_t *new_vir_addr)
     
     offset_in_mptpage = lpn_in_pu%LPN_CNT_PER_PMTPAGE;
 
-    old_vir_addr = &pmt[pu]->page[pmtpage_in_pu].item[offset_in_mptpage].vir_flash_addr;
+    return &pmt[pu]->page[pmtpage_in_pu].item[offset_in_mptpage].vir_flash_addr;
+}
 
-    table_update_rpmt(lpn, old_vir_addr, new_vir_addr);
 
+U32 table_update_pmt(U32 lpn, const struct flash_addr_t *new_vir_addr)
+{
+    struct flash_addr_t *old_vir_addr = get_loc_in_pmt(lpn);
+
+    if (addr_valid(old_vir_addr))
+    {
+        table_update_rpmt(lpn, old_vir_addr, new_vir_addr);
+    }
+    
     old_vir_addr->ppn = new_vir_addr->ppn;
 
-    return 0;
+    return SUCCESS;
+}
+
+U32 table_lookup_mpt(U32 lpn, struct flash_addr_t *dest_vir_addr)
+{
+    struct flash_addr_t *src_vir_addr = get_loc_in_pmt(lpn);
+
+    dest_vir_addr->ppn = src_vir_addr->ppn;
+
+    return SUCCESS;
 }
 
 

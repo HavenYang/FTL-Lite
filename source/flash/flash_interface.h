@@ -61,6 +61,8 @@ struct flash_req_t
 /*============================================================================*/
 
 U32 flash_write(struct flash_addr_t *phy_addr, struct flash_req_t *flash_req);
+U32 flash_read(struct flash_addr_t *phy_addr, struct flash_req_t *read_req);
+U32 flash_erase(U32 pu, U32 phy_block_addr);
 
 
 #endif

@@ -85,6 +85,11 @@ while(1);\
 
 #define assert_null_pointer(p)  if (NULL == (p)) {fatalerror();}
 
+#define equal8f(value)   (0xfffffffful == (value))
+#define equal4f(value)   (0xffff == (value))
+#define equal2f(value)   (0xff == (value))
+
+
 #endif
 /*====================End of this head file===================================*/
 

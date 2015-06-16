@@ -35,12 +35,12 @@
 /*============================================================================*/
 
 
-U32 flash_write(struct flash_addr_t *phy_addr, struct flash_req_t *flash_req)
+U32 flash_write(struct flash_addr_t *phy_addr, struct flash_req_t *write_req)
 {
     return SUCCESS;
 }
 
-U32 flash_read(struct flash_addr_t *phy_addr, struct flash_req_t *flash_req)
+U32 flash_read(struct flash_addr_t *phy_addr, struct flash_req_t *read_req)
 {
     return SUCCESS;
 }
