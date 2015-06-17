@@ -280,18 +280,19 @@ U32 table_update_rpmt(U32 lpn, const struct flash_addr_t *old_addr, const struct
     assert_null_pointer(old_addr);
     assert_null_pointer(new_addr);
 
-    if (old_addr->pu_index != new_addr->pu_index)
+    if (addr_valid(old_addr))
     {
-        fatalerror("not in the same pu");
+        if (old_addr->pu_index != new_addr->pu_index)
+        {
+            fatalerror("not in the same pu");
+        }
+        old_rpmt = &rpmt[old_addr->pu_index]->block[old_addr->block_in_pu];
+        old_rpmt->lpn[old_addr->page_in_block * LPN_PER_BUF + old_addr->lpn_in_page] = 0xfffffffful;
+        vbt[old_addr->pu_index]->item[old_addr->block_in_pu].lpn_dirty_count++;
     }
 
     new_rpmt = &rpmt[new_addr->pu_index]->block[new_addr->block_in_pu];
-    old_rpmt = &rpmt[old_addr->pu_index]->block[old_addr->block_in_pu];
-
-    old_rpmt->lpn[old_addr->page_in_block * LPN_PER_BUF + old_addr->lpn_in_page] = 0xfffffffful;
     new_rpmt->lpn[new_addr->page_in_block * LPN_PER_BUF + new_addr->lpn_in_page] = lpn;
-
-    vbt[old_addr->pu_index]->item[old_addr->block_in_pu].lpn_dirty_count++;
 
     return SUCCESS;
 }
@@ -319,10 +320,7 @@ U32 table_update_pmt(U32 lpn, const struct flash_addr_t *new_vir_addr)
 {
     struct flash_addr_t *old_vir_addr = get_loc_in_pmt(lpn);
 
-    if (addr_valid(old_vir_addr))
-    {
-        table_update_rpmt(lpn, old_vir_addr, new_vir_addr);
-    }
+    table_update_rpmt(lpn, old_vir_addr, new_vir_addr);
     
     old_vir_addr->ppn = new_vir_addr->ppn;
 

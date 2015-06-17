@@ -188,7 +188,8 @@ U32 ftl_write(const struct ftl_req_t *write_request)
     return SUCCESS;
 }
 
-
+/*ftl read should be rewrite, it need to compare the vir-addr from pmt and 
+then decide is seq read or not */
 U32 ftl_read(const struct ftl_req_t *read_request)
 {
     U32 lpn;
