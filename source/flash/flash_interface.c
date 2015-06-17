@@ -44,10 +44,6 @@ U32 flash_write(struct flash_addr_t *phy_addr, struct flash_req_t *write_req)
     {
         result = sim_flash_write_page(phy_addr, write_req);
     }
-    else if (LPN_SIZE == write_req->data_length)
-    {
-        result = sim_flash_write_lpn(phy_addr, write_req);
-    }
     else
     {
         result = ERROR_FLASH_WRITE;

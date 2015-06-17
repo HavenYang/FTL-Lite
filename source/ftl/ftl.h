@@ -27,7 +27,8 @@
 #define PMT_BASE_ADDR       (PBT_BASE_ADDR + (sizeof(struct pbt_t) * MAX_PU_NUM))
 #define RPMT_BASE_ADDR      (PMT_BASE_ADDR + (sizeof(struct pmt_t) * MAX_PU_NUM))
 #define PUINFO_BASE_ADDR    (RPMT_BASE_ADDR + (sizeof(struct rpmt_t) * MAX_PU_NUM))
-#define RSVE_DRAM_ADDR      (PUINFO_BASE_ADDR + (sizeof(struct pu_info_t) * MAX_PU_NUM))
+#define BUFFER_DRAM_ADDR    (PUINFO_BASE_ADDR + (sizeof(struct pu_info_t) * MAX_PU_NUM))
+#define RSVE_DRAM_ADDR      (BUFFER_DRAM_ADDR + (BUF_SIZE * MAX_PU_NUM))
 
 
 enum{
@@ -36,6 +37,7 @@ enum{
     ERROR_FLASH_WRITE,
     ERROR_FLASH_ERASE,
     ERROR_NO_FLASH_PAGE,
+    READ_WITHOUT_WRITE,
     ERROR_UNKNOWN,
 };
 

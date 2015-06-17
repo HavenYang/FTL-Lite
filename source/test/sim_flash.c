@@ -126,6 +126,17 @@ void sim_check_flash_req(const struct flash_req_t *flash_req)
     }
 }
 
+static void sim_set_flash_data(struct sim_flash_lpn_data_t* lpn_data, U32 buffer)
+{
+    lpn_data->lpn = *(U32*)buffer;
+    lpn_data->write_count = *(U32*)(buffer + sizeof(U32));
+}
+
+static void sim_get_flash_data(const struct sim_flash_lpn_data_t* lpn_data, U32 buffer)
+{
+    *(U32*)buffer = lpn_data->lpn;
+    *(U32*)(buffer + sizeof(U32)) = lpn_data->write_count;
+}
 
 U32 sim_flash_erase_block(U32 pu, U32 block)
 {
@@ -156,14 +167,9 @@ U32 sim_flash_write_page(const struct flash_addr_t *phy_addr, const struct flash
 
     for (i = 0; i < LPN_PER_BUF; i++)
     {
-        sim_page_data->lpn[i].data = *(U32 *)(buffer + LPN_SIZE * i);
+        sim_set_flash_data(&sim_page_data->lpn[i], buffer + LPN_SIZE * i);
     }
     
-    return SIM_SUCCESS;
-}
-
-U32 sim_flash_write_lpn(const struct flash_addr_t *phy_addr, const struct flash_req_t *write_req)
-{
     return SIM_SUCCESS;
 }
 
@@ -174,6 +180,15 @@ U32 sim_flash_read_page(const struct flash_addr_t *phy_addr, const struct flash_
 
 U32 sim_flash_read_lpn(const struct flash_addr_t *phy_addr, const struct flash_req_t *read_req)
 {
+    struct sim_flash_page_data_t *sim_page_data;
+
+    sim_check_flash_addr(phy_addr);
+    sim_check_flash_req(read_req);
+
+    sim_page_data = &sim_flash_data[phy_addr->pu_index]->block[phy_addr->block_in_pu].page[phy_addr->page_in_block];
+
+    sim_get_flash_data(&sim_page_data->lpn[phy_addr->lpn_in_page], read_req->data_buffer_addr);
+    
     return SIM_SUCCESS;
 }
 

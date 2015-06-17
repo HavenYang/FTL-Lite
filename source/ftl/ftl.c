@@ -10,6 +10,9 @@
 /*============================================================================*/
 /* #include region: include std lib & other head file                         */
 /*============================================================================*/
+#include <stdio.h>
+#include <memory.h>
+
 #include "disk_config.h"
 #include "flash_interface.h"
 #include "ftl.h"
@@ -31,7 +34,7 @@ extern U8 *g_device_dram_addr;
 /*============================================================================*/
 /* local region:  declare local variable & local function prototype           */
 /*============================================================================*/
-LOCAL struct ftl_req_t unfull_write_req;
+LOCAL struct ftl_req_t unfull_write_req[PU_NUM];
 
 /*============================================================================*/
 /* main code region: function implement                                       */
@@ -64,10 +67,17 @@ U32 get_puinfo_baseaddr(void)
 }
 
 
-
 void other_init(void)
 {
-    //unfull_write_req.buffer_addr = 
+    U32 pu;
+
+    memset(unfull_write_req, 0, sizeof(unfull_write_req));
+    
+    for (pu = 0; pu < MAX_PU_NUM; pu++)
+    {
+        unfull_write_req[pu].request_type = FRT_RAN_WRITE;
+        unfull_write_req[pu].buffer_addr = BUFFER_DRAM_ADDR + BUF_SIZE * pu;
+    }
 }
 
 U32 ftl_llf(void)
@@ -103,16 +113,14 @@ U32 addr_invalid(const struct flash_addr_t *flash_addr)
 }
 
 
-U32 ftl_write(const struct ftl_req_t *write_request)
+static U32 ftl_write_full_page(const struct ftl_req_t *write_request)
 {
     U32 lpn;
     U32 pu;
     U32 i;
     struct flash_addr_t vir_addr;
-	struct flash_addr_t phy_addr;
-	struct flash_req_t  flash_write_req;
-
-    assert_null_pointer(write_request);
+    struct flash_addr_t phy_addr;
+    struct flash_req_t  flash_write_req;
 
     lpn = write_request->lpn_list[0];
     
@@ -137,9 +145,47 @@ U32 ftl_write(const struct ftl_req_t *write_request)
     flash_write_req.data_buffer_addr = write_request->buffer_addr;
     flash_write_req.spare_buffer_addr = 0; //to be continue
 
-    flash_write_req.data_length = write_request->lpn_count * LPN_SIZE;
+    flash_write_req.data_length = BUF_SIZE;
     
     return flash_write(&phy_addr, &flash_write_req);
+}
+
+U32 ftl_write(const struct ftl_req_t *write_request)
+{
+    U32 lpn;
+    U32 pu;
+    U32 i;
+    struct ftl_req_t* rwr;   /* random write temp request */
+
+    assert_null_pointer(write_request);
+
+    if (FRT_SEQ_WRITE == write_request->request_type)
+    {
+        return ftl_write_full_page(write_request);
+    }
+    else if(FRT_RAN_WRITE == write_request->request_type)
+    {
+        for (i = 0; i < write_request->lpn_count; i++)
+        {
+            lpn = write_request->lpn_list[i];
+            pu = get_pu_from_lpn(lpn);
+            rwr = &unfull_write_req[pu];
+            rwr->lpn_list[rwr->lpn_count] = lpn;
+            memcpy((void*)(rwr->buffer_addr + rwr->lpn_count * LPN_SIZE), (void*)(write_request->buffer_addr + i * LPN_SIZE), LPN_SIZE);
+            rwr->lpn_count++;
+            if (LPN_PER_BUF == rwr->lpn_count)
+            {
+                ftl_write_full_page(rwr);
+                rwr->lpn_count = 0;
+            }
+        }
+    }
+    else
+    {
+        fatalerror("unknown write request");
+    }
+
+    return SUCCESS;
 }
 
 
@@ -147,8 +193,8 @@ U32 ftl_read(const struct ftl_req_t *read_request)
 {
     U32 lpn;
     struct flash_addr_t vir_addr;
-	struct flash_addr_t phy_addr;
-	struct flash_req_t  flash_read_req;
+    struct flash_addr_t phy_addr;
+    struct flash_req_t  flash_read_req;
 
     assert_null_pointer(read_request);
 
@@ -169,9 +215,9 @@ U32 ftl_read(const struct ftl_req_t *read_request)
     }
     else
     {
-        printf("read without write!\n");
+        //printf("read without write!\n");
         // to be continue;
-        return SUCCESS;
+        return READ_WITHOUT_WRITE;
     }
 }
 

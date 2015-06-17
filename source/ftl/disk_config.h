@@ -59,14 +59,14 @@
 #define LPN_IN_BLK              (1 << (PG_PER_BLK_BITS + LPN_PER_BUF_BITS))
 #define LPN_IN_PU               (1 << (PG_PER_BLK_BITS + BLK_PER_PLN_BITS + LPN_PER_BUF_BITS))
 
+#define PU_NUM  2 /* runtime pu number, <= MAX_PU_NUM */
 #define MAX_PU_NUM              2
-#define MAX_LPN_IN_DISK         (MAX_PU_NUM * LPN_IN_PU)
+#define MAX_LPN_IN_DISK         (PU_NUM * LPN_IN_PU)
 #define MAX_LBA_IN_DISK         (MAX_LPN_IN_DISK << SEC_PER_LPN_BITS)
 
 #define PMT_PAGE_IN_PU          (LPN_IN_PU/LPN_CNT_PER_PMTPAGE)
 #define PMT_PAGE_CNT            (MAX_LPN_IN_DISK/LPN_CNT_PER_PMTPAGE)
 
-#define PU_NUM  2 /* runtime pu number, <= MAX_PU_NUM */
 
 /*============================================================================*/
 /* #typedef region: global data structure & data type typedefed here          */

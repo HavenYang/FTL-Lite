@@ -12,6 +12,7 @@
 /*============================================================================*/
 #include <stdio.h>
 #include <stdlib.h>
+#include <memory.h>
 #include "basedefine.h"
 #include "disk_config.h"
 #include "flash_interface.h"
@@ -34,10 +35,44 @@
 /*============================================================================*/
 /* local region:  declare local variable & local function prototype           */
 /*============================================================================*/
+static U32 lpn_write_count[MAX_LPN_IN_DISK];
 
 /*============================================================================*/
 /* main code region: function implement                                       */
 /*============================================================================*/
+void sim_test_init(void)
+{
+    memset(lpn_write_count, 0, sizeof(lpn_write_count));
+}
+
+static void sim_set_write_data(U32 buffer, U32 lpn)
+{
+    lpn_write_count[lpn]++;
+
+    *(U32*)buffer = lpn;
+    *(U32*)(buffer + sizeof(U32)) = lpn_write_count[lpn];
+}
+
+static void sim_check_read_data(U32 buffer, U32 lpn)
+{
+    U32 read_lpn;
+    U32 read_count;
+
+    read_lpn = *(U32*)buffer;
+    read_count = *(U32*)(buffer + sizeof(U32));
+    
+    if (lpn != read_lpn)
+    {
+        printf("lpn = %d, but read result is %d\n", lpn, read_lpn);
+        dbg_getch();
+    }
+
+    if (lpn_write_count[lpn] != read_count)
+    {
+        printf("lpn(%d) write count = %d, but read result is %d\n", lpn, lpn_write_count[lpn], read_count);
+        dbg_getch();
+    }
+}
 
 void sim_random_write_lpn(U32 lpn)
 {
@@ -53,12 +88,12 @@ void sim_random_write_lpn(U32 lpn)
         return;
     }
 
-    *(U32*)data_buffer = lpn;
-
     write_req.request_type = FRT_RAN_WRITE;
     write_req.lpn_count = 1;
     write_req.lpn_list[0] = lpn;
     write_req.buffer_addr = (U32)data_buffer;
+
+    sim_set_write_data((U32)data_buffer, lpn);
 
     ftl_write(&write_req);
 
@@ -96,7 +131,7 @@ void sim_seq_write_page(start_lpn)
     for (i = 0; i < LPN_PER_BUF; i++)
     {
         write_req.lpn_list[i] = start_lpn + i;
-        *(U32*)(data_buffer + LPN_SIZE * i ) = start_lpn + i;
+        sim_set_write_data((U32)(data_buffer + LPN_SIZE * i), (start_lpn + i));
     }
     
     ftl_write(&write_req);
@@ -136,6 +171,41 @@ void sim_write(U32 start_lpn, U32 lpn_count)
 void sim_write_whole_disk(void)
 {
     sim_write(0, LPN_IN_PU * PU_NUM);
+}
+
+
+void sim_random_read_lpn(U32 lpn)
+{
+    U8 *data_buffer;
+    
+    struct ftl_req_t read_req;
+
+    data_buffer = (U8 *)malloc(LPN_SIZE);
+
+    if (NULL == data_buffer)
+    {
+        printf("no memory!\n");
+        return;
+    }
+
+    read_req.request_type = FRT_RAN_READ;
+    read_req.lpn_count = 1;
+    read_req.lpn_list[0] = lpn;
+    read_req.buffer_addr = (U32)data_buffer;
+
+    ftl_read(&read_req);
+
+    //if write_operation_finished
+    {
+        sim_check_read_data((U32)data_buffer, lpn);
+        free(data_buffer);
+        data_buffer = NULL;
+    }
+}
+
+void sim_read_whole_disk(void)
+{
+    
 }
 
 void run_test_cases(void)

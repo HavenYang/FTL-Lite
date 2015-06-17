@@ -26,7 +26,7 @@
 /*============================================================================*/
 /* function declaration region: declare global function prototype             */
 /*============================================================================*/
-
+void sim_test_init(void);
 void run_test_cases(void);
 
 

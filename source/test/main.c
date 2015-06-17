@@ -35,6 +35,11 @@ struct tables
     struct pu_info_t puinfo;
 };
 
+struct buffers
+{
+    U8 buffer[BUF_SIZE];
+};
+
 /*============================================================================*/
 /* extern region: extern global variable & function prototype                 */
 /*============================================================================*/
@@ -70,7 +75,7 @@ void dbg_getch(void)
 
 U32 sim_dram_init(void)
 {
-    g_device_dram_size = (sizeof(struct tables)) * MAX_PU_NUM;
+    g_device_dram_size = (sizeof(struct tables) + BUF_SIZE) * MAX_PU_NUM;
     g_device_dram_addr = (U8*)malloc(g_device_dram_size);
 
     assert_null_pointer(g_device_dram_addr);
@@ -125,6 +130,7 @@ int main(int argc, char* argv)
 {
     if (SIM_SUCCESS == test_env_init())
     {
+        sim_test_init();
         ftl_init();
         
         run_test_cases();
