@@ -18,7 +18,7 @@
 #include "table.h"
 #include "sim_flash.h"
 #include "sim_test.h"
-
+#include "ftl.h"
 
 /*============================================================================*/
 /* #define region: constant & MACRO defined here                              */
@@ -53,6 +53,20 @@ U32 g_device_dram_size = 0;
 /*============================================================================*/
 /* main code region: function implement                                       */
 /*============================================================================*/
+U32 g_ulDbgEnable = 1;
+
+void dbg_getch(void)
+{
+    U32 ulTestLoop = 0;
+    printf("Fatal Error, DBG_Getch!!!\n");
+
+    while (g_ulDbgEnable)
+    {
+        ulTestLoop++;
+    }
+    g_ulDbgEnable = 1;
+}
+
 
 U32 sim_dram_init(void)
 {
@@ -68,7 +82,7 @@ U32 sim_dram_init(void)
     }
     else
     {
-        printf("sim dram memory size : 0x%x \n", g_device_dram_addr);
+        printf("sim dram memory size : 0x%x \n", g_device_dram_size);
     }
 
     memset(g_device_dram_addr, 0, g_device_dram_size);
@@ -109,11 +123,16 @@ void test_env_exit(void)
 
 int main(int argc, char* argv)
 {
-    test_env_init();
+    if (SIM_SUCCESS == test_env_init())
+    {
+        ftl_init();
+        
+        run_test_cases();
+        
+        test_env_exit();
+    }
 
-    run_test_cases();
-
-    test_env_exit();
+    return 0;
 }
 
 /*====================End of this file========================================*/

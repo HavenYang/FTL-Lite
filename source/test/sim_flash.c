@@ -16,6 +16,7 @@
 
 #include "sim_flash.h"
 #include "sim_test.h"
+#include "ftl.h"
 
 /*============================================================================*/
 /* #define region: constant & MACRO defined here                              */
@@ -76,6 +77,55 @@ void sim_flash_exit(void)
     }
 }
 
+void sim_check_flash_addr(const struct flash_addr_t *phy_addr)
+{
+    assert_null_pointer(phy_addr);
+    
+    if (phy_addr->pu_index >= PU_NUM)
+    {
+        fatalerror("pu num overflow");
+    }
+
+    if (phy_addr->block_in_pu >= BLK_PER_PLN)
+    {
+        fatalerror("block num overflow");
+    }
+
+    if (phy_addr->page_in_block >= PG_PER_BLK)
+    {
+        fatalerror("page num overflow");
+    }
+
+    if (phy_addr->lpn_in_page >= LPN_PER_BUF)
+    {
+        fatalerror("lpn in page num overflow");
+    }
+}
+
+void sim_check_flash_req(const struct flash_req_t *flash_req)
+{
+    assert_null_pointer(flash_req);
+    if (0 == flash_req->data_buffer_addr)
+    {
+        fatalerror("buffer addr is null");
+    }
+
+    if (0 == flash_req->data_length)
+    {
+        fatalerror("data length zero");
+    }
+
+    if (flash_req->data_length > BUF_SIZE)
+    {
+        fatalerror("data length overflow");
+    }
+
+    if (len_not_lpn_align(flash_req->data_length))
+    {
+        fatalerror("data length not lpn align");
+    }
+}
+
 
 U32 sim_flash_erase_block(U32 pu, U32 block)
 {
@@ -84,6 +134,31 @@ U32 sim_flash_erase_block(U32 pu, U32 block)
 
 U32 sim_flash_write_page(const struct flash_addr_t *phy_addr, const struct flash_req_t *write_req)
 {
+    U32 i;
+    U32 buffer;
+    struct sim_flash_page_data_t *sim_page_data;
+    
+    sim_check_flash_addr(phy_addr);
+    sim_check_flash_req(write_req);
+
+    if (0 != phy_addr->lpn_in_page)
+    {
+        fatalerror("flash addr not page align");
+    }
+
+    if (BUF_SIZE != write_req->data_length)
+    {
+        fatalerror("not full page data");
+    }
+
+    sim_page_data = &sim_flash_data[phy_addr->pu_index]->block[phy_addr->block_in_pu].page[phy_addr->page_in_block];
+    buffer = write_req->data_buffer_addr;
+
+    for (i = 0; i < LPN_PER_BUF; i++)
+    {
+        sim_page_data->lpn[i].data = *(U32 *)(buffer + LPN_SIZE * i);
+    }
+    
     return SIM_SUCCESS;
 }
 

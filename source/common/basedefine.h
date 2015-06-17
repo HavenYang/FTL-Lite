@@ -77,13 +77,16 @@ typedef S32 BOOL;
 #define BYTE_2(dw)          (((dw)>>16) & 0xff)
 #define BYTE_3(dw)          (((dw)>>24) & 0xff)
 
-#define fatalerror()     do {\
-printf("fatalerror: %s, line %d\n",__FILE__,__LINE__); \
-while(1);\
+void dbg_getch(void);
+
+
+#define fatalerror(str)     do {\
+printf("%s, line %d : %s\n",__FILE__,__LINE__, (str)); \
+dbg_getch();\
 }while(0)
 
 
-#define assert_null_pointer(p)  if (NULL == (p)) {fatalerror();}
+#define assert_null_pointer(p)  if (NULL == (p)) {fatalerror("null pointer");}
 
 #define equal8f(value)   (0xfffffffful == (value))
 #define equal4f(value)   (0xffff == (value))

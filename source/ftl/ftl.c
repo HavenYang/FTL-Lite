@@ -79,7 +79,7 @@ U32 ftl_llf(void)
     return 0;
 }
 
-U32 flt_init(void)
+U32 ftl_init(void)
 {
     ftl_llf();
     init_pu_info();

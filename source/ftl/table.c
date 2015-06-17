@@ -225,7 +225,7 @@ U32 flash_alloc_block(U32 pu)
 
     if (PG_PER_BLK != blockinfo->free_page_count)
     {
-        fatalerror();
+        fatalerror("new block page count error");
     }
 
     return target_block;
@@ -246,7 +246,7 @@ struct flash_addr_t flash_alloc_page(U32 pu)
 
     blockinfo = &puinfo->block_info[curr_block];
 
-    if (blockinfo->free_page_count > 0)
+    if ((BLOCK_STATUS_ALLOCATED == blockinfo->status)&&(blockinfo->free_page_count > 0))
     {
         target_vir_addr.block_in_pu = curr_block;
         target_vir_addr.page_in_block = PG_PER_BLK - blockinfo->free_page_count;
@@ -282,7 +282,7 @@ U32 table_update_rpmt(U32 lpn, const struct flash_addr_t *old_addr, const struct
 
     if (old_addr->pu_index != new_addr->pu_index)
     {
-        fatalerror();
+        fatalerror("not in the same pu");
     }
 
     new_rpmt = &rpmt[new_addr->pu_index]->block[new_addr->block_in_pu];

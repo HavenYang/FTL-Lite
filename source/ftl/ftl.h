@@ -39,6 +39,14 @@ enum{
     ERROR_UNKNOWN,
 };
 
+#define lpn_page_align(lpn)     (0 == ((lpn) & LPN_PER_BUF_MSK))
+#define lpn_not_page_align(lpn) (0 != ((lpn) & LPN_PER_BUF_MSK))
+#define len_lpn_align(len)      (0 == ((len) & LPN_SIZE_MSK))
+#define len_not_lpn_align(len)  (0 != ((len) & LPN_SIZE_MSK))
+#define len_page_align(len)     (0 == ((len) & BUF_SIZE_MSK))
+#define len_not_page_align(len) (0 != ((len) & BUF_SIZE_MSK))
+
+
 /*============================================================================*/
 /* #typedef region: global data structure & data type typedefed here          */
 /*============================================================================*/
@@ -65,6 +73,8 @@ struct ftl_req_t
 /*============================================================================*/
 /* function declaration region: declare global function prototype             */
 /*============================================================================*/
+U32 ftl_init(void);
+
 U32 get_pmt_baseaddr(void);
 U32 get_pbt_baseaddr(void);
 U32 get_vbt_baseaddr(void);
@@ -75,6 +85,9 @@ U32 get_pu_from_lpn(U32 lpn);
 U32 table_update_pmt(U32 lpn, const struct flash_addr_t *new_vir_addr);
 U32 addr_valid(const struct flash_addr_t *flash_addr);
 U32 addr_invalid(const struct flash_addr_t *flash_addr);
+
+U32 ftl_write(const struct ftl_req_t *write_request);
+U32 ftl_read(const struct ftl_req_t *read_request);
 
 
 #endif
