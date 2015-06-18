@@ -68,6 +68,9 @@ typedef S32 BOOL;
 #define NULL 0
 #endif
 
+#define TRUE    1
+#define FALSE   0
+
 #define max(a,b)            (((a) > (b)) ? (a) : (b))
 #define min(a,b)            (((a) < (b)) ? (a) : (b))
 #define BIT(n)              (1<<(n))

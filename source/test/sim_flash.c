@@ -175,6 +175,32 @@ U32 sim_flash_write_page(const struct flash_addr_t *phy_addr, const struct flash
 
 U32 sim_flash_read_page(const struct flash_addr_t *phy_addr, const struct flash_req_t *read_req)
 {
+    U32 i;
+    U32 buffer;
+    struct sim_flash_page_data_t *sim_page_data;
+
+    sim_check_flash_addr(phy_addr);
+    sim_check_flash_req(read_req);
+
+    if (0 != phy_addr->lpn_in_page)
+    {
+        fatalerror("flash addr not page align");
+    }
+
+    if (BUF_SIZE != read_req->data_length)
+    {
+        fatalerror("not full page data");
+    }
+
+    sim_page_data = &sim_flash_data[phy_addr->pu_index]->block[phy_addr->block_in_pu].page[phy_addr->page_in_block];
+
+    buffer = read_req->data_buffer_addr;
+
+    for (i = 0; i < LPN_PER_BUF; i++)
+    {
+        sim_get_flash_data(&sim_page_data->lpn[i], buffer + LPN_SIZE * i);
+    }
+    
     return SIM_SUCCESS;
 }
 

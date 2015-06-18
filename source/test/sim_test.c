@@ -168,11 +168,6 @@ void sim_write(U32 start_lpn, U32 lpn_count)
     }
 }
 
-void sim_write_whole_disk(void)
-{
-    sim_write(0, LPN_IN_PU * PU_NUM);
-}
-
 
 void sim_random_read_lpn(U32 lpn)
 {
@@ -195,7 +190,7 @@ void sim_random_read_lpn(U32 lpn)
 
     ftl_read(&read_req);
 
-    //if write_operation_finished
+    //if read_operation_finished
     {
         sim_check_read_data((U32)data_buffer, lpn);
         free(data_buffer);
@@ -203,14 +198,84 @@ void sim_random_read_lpn(U32 lpn)
     }
 }
 
-void sim_read_whole_disk(void)
+void sim_seq_read_page(U32 start_lpn)
 {
+    U32 i;
+    U8 *data_buffer;
     
+    struct ftl_req_t read_req;
+
+    data_buffer = (U8 *)malloc(BUF_SIZE);
+
+    if (NULL == data_buffer)
+    {
+        printf("no memory!\n");
+        return;
+    }
+
+    read_req.request_type = FRT_SEQ_READ;
+    read_req.lpn_count = LPN_PER_BUF;
+    read_req.buffer_addr = (U32)data_buffer;
+
+    for (i = 0; i < LPN_PER_BUF; i++)
+    {
+        read_req.lpn_list[i] = start_lpn + i;
+    }
+    
+    ftl_read(&read_req);
+
+    //if read_operation_finished
+    {
+        for (i = 0; i < LPN_PER_BUF; i++)
+        {
+            sim_check_read_data((U32)(data_buffer + LPN_SIZE * i), start_lpn + i);
+        }
+        
+        free(data_buffer);
+        data_buffer = NULL;
+    }
+}
+
+void sim_read(U32 start_lpn, U32 lpn_count)
+{
+    U32 lpn = start_lpn;
+    U32 remain = lpn_count;
+    
+    while(lpn_not_page_align(lpn) && (remain > 0))
+    {
+        sim_random_read_lpn(lpn++);
+        remain--;
+    }
+
+    while(remain >= LPN_PER_BUF)
+    {
+        sim_seq_read_page(lpn);
+        lpn += LPN_PER_BUF;
+        remain -= LPN_PER_BUF;
+    }
+
+    while(remain > 0)
+    {
+        sim_random_write_lpn(lpn++);
+        remain--;
+    }
+}
+
+
+void test_write_whole_disk(void)
+{
+    sim_write(0, LPN_IN_PU * PU_NUM);
+}
+
+void test_read_whole_disk(void)
+{
+    sim_read(0, LPN_IN_PU * PU_NUM);
 }
 
 void run_test_cases(void)
 {
-    //sim_write_whole_disk();
+    test_write_whole_disk();
+    test_read_whole_disk();
     sim_write(0,LPN_PER_BUF);
 }
 

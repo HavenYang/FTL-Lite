@@ -327,7 +327,7 @@ U32 table_update_pmt(U32 lpn, const struct flash_addr_t *new_vir_addr)
     return SUCCESS;
 }
 
-U32 table_lookup_mpt(U32 lpn, struct flash_addr_t *dest_vir_addr)
+U32 table_lookup_pmt(U32 lpn, struct flash_addr_t *dest_vir_addr)
 {
     struct flash_addr_t *src_vir_addr = get_loc_in_pmt(lpn);
 

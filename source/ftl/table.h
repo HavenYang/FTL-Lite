@@ -131,13 +131,10 @@ struct pu_info_t
 /* function declaration region: declare global function prototype             */
 /*============================================================================*/
 void table_llf_bbt(void);
-
 void table_llf_vbt(void);
-
 void table_llf_pbt(void);
-
 void table_llf_pmt(void);
-
+void table_llf_rpmt(void);
 void init_pu_info(void);
 
 
@@ -145,7 +142,7 @@ struct flash_addr_t flash_alloc_page(U32 pu);
 void vir_to_phy_addr(const struct flash_addr_t *vir_addr_from, struct flash_addr_t *phy_addr_to);
 U32 flash_alloc_block(U32 pu);
 U32 table_update_pmt(U32 lpn, const struct flash_addr_t *new_vir_addr);
-U32 table_lookup_mpt(U32 lpn, struct flash_addr_t *dest_vir_addr);
+U32 table_lookup_pmt(U32 lpn, struct flash_addr_t *dest_vir_addr);
 
 
 

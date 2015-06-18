@@ -86,6 +86,7 @@ U32 ftl_llf(void)
     table_llf_vbt();
     table_llf_pbt();
     table_llf_pmt();
+    table_llf_rpmt();
     return 0;
 }
 
@@ -110,6 +111,21 @@ U32 addr_valid(const struct flash_addr_t *flash_addr)
 U32 addr_invalid(const struct flash_addr_t *flash_addr)
 {
     return (0xfffffffful == flash_addr->ppn);
+}
+
+U32 is_sequence_addr(const struct flash_addr_t *curr, const struct flash_addr_t *next)
+{
+    if ((curr->pu_index == next->pu_index)
+     &&(curr->block_in_pu == next->block_in_pu)
+     &&(curr->page_in_block == next->page_in_block)
+     &&(curr->lpn_in_page + 1 == next->lpn_in_page))
+    {
+        return TRUE;
+    }
+    else
+    {
+        return FALSE;
+    }
 }
 
 
@@ -188,38 +204,97 @@ U32 ftl_write(const struct ftl_req_t *write_request)
     return SUCCESS;
 }
 
-/*ftl read should be rewrite, it need to compare the vir-addr from pmt and 
-then decide is seq read or not */
+EFRT read_request_type(const struct ftl_req_t *read_request)
+{
+    U32 i;
+    struct flash_addr_t curr_vir_addr;
+    struct flash_addr_t next_vir_addr;
+    
+    if (FRT_RAN_READ == read_request->request_type)
+    {
+        return FRT_RAN_READ;
+    }
+
+    if (FRT_SEQ_READ != read_request->request_type)
+    {
+        fatalerror("unknown read request type");
+    }
+
+    if (LPN_PER_BUF != read_request->lpn_count)
+    {
+        return FRT_RAN_READ;
+    }
+
+    table_lookup_pmt(read_request->lpn_list[0], &curr_vir_addr);
+    if (0 != curr_vir_addr.lpn_in_page)
+    {
+        return FRT_RAN_READ;
+    }
+
+    for (i = 1; i < LPN_PER_BUF; i++)
+    {
+        table_lookup_pmt(read_request->lpn_list[i], &next_vir_addr);
+
+        if (FALSE == is_sequence_addr(&curr_vir_addr, &next_vir_addr))
+        {
+            return FRT_RAN_READ;
+        }
+    }
+
+    return FRT_SEQ_READ;
+}
+
+
 U32 ftl_read(const struct ftl_req_t *read_request)
 {
+    U32 i;
     U32 lpn;
+    EFRT req_type;
     struct flash_addr_t vir_addr;
     struct flash_addr_t phy_addr;
     struct flash_req_t  flash_read_req;
 
     assert_null_pointer(read_request);
 
-    lpn = read_request->lpn_list[0];
-    
-    table_lookup_mpt(lpn, &vir_addr);
+    req_type = read_request_type(read_request);
 
-    if (addr_valid(&vir_addr))
+    if (FRT_SEQ_READ == req_type)
     {
+        lpn = read_request->lpn_list[0];
+        table_lookup_pmt(lpn, &vir_addr);
         vir_to_phy_addr(&vir_addr, &phy_addr);
-
+        
         flash_read_req.data_buffer_addr = read_request->buffer_addr;
         flash_read_req.spare_buffer_addr = 0; //to be continue
+        flash_read_req.data_length = BUF_SIZE;
 
-        flash_read_req.data_length = read_request->lpn_count * LPN_SIZE;
-        
-        return flash_read(&phy_addr, &flash_read_req);
+        flash_read(&phy_addr, &flash_read_req);
     }
     else
     {
-        //printf("read without write!\n");
-        // to be continue;
-        return READ_WITHOUT_WRITE;
+        for (i = 0; i < read_request->lpn_count; i++)
+        {
+            lpn = read_request->lpn_list[i];
+            table_lookup_pmt(lpn, &vir_addr);
+
+            if (addr_valid(&vir_addr))
+            {
+                vir_to_phy_addr(&vir_addr, &phy_addr);
+                
+                flash_read_req.data_buffer_addr = read_request->buffer_addr + LPN_SIZE * i;
+                flash_read_req.spare_buffer_addr = 0; //to be continue
+                flash_read_req.data_length = LPN_SIZE;
+
+                flash_read(&phy_addr, &flash_read_req);
+            }
+            else
+            {
+                printf("read without write!\n");
+            }
+        }
     }
+
+    return SUCCESS;
 }
 
 
