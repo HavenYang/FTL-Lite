@@ -277,6 +277,7 @@ void run_test_cases(void)
     test_write_whole_disk();
     test_read_whole_disk();
     sim_write(0,LPN_PER_BUF);
+    sim_read(0,LPN_PER_BUF);
 }
 
 

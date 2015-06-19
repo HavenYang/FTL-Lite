@@ -239,6 +239,8 @@ EFRT read_request_type(const struct ftl_req_t *read_request)
         {
             return FRT_RAN_READ;
         }
+
+        curr_vir_addr.ppn = next_vir_addr.ppn;
     }
 
     return FRT_SEQ_READ;

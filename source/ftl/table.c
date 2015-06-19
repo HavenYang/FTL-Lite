@@ -169,7 +169,7 @@ void init_pu_info(void)
             pu_info[pu]->bad_block_count = 0; //to be defined by bbt
             pu_info[pu]->block_count = BLK_PER_PLN;
             pu_info[pu]->curr_block = 0;
-            pu_info[pu]->free_block_count = BLK_PER_PLN - 2;    //to be defined by reserved block count
+            pu_info[pu]->free_block_count = BLK_PER_PLN;    //to be defined by reserved block count
             table_init_block_info(&pu_info[pu]->block_info[block]);
         }
     }
