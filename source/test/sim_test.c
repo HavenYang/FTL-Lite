@@ -264,12 +264,12 @@ void sim_read(U32 start_lpn, U32 lpn_count)
 
 void test_write_whole_disk(void)
 {
-    sim_write(0, LPN_IN_PU * PU_NUM);
+    sim_write(0, MAX_LPN_IN_DISK);
 }
 
 void test_read_whole_disk(void)
 {
-    sim_read(0, LPN_IN_PU * PU_NUM);
+    sim_read(0, MAX_LPN_IN_DISK);
 }
 
 void run_test_cases(void)

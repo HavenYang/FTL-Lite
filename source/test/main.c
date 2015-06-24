@@ -117,6 +117,8 @@ U32 test_env_init(void)
         return SIM_FAIL;
     }
 
+    sim_test_init();
+
     return SIM_SUCCESS;
 }
 
@@ -130,7 +132,7 @@ int main(int argc, char* argv)
 {
     if (SIM_SUCCESS == test_env_init())
     {
-        sim_test_init();
+        
         ftl_init();
         
         run_test_cases();
