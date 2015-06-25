@@ -111,7 +111,8 @@ struct block_info_t
 {
     EBS status;
     U32 erase_count;
-    U32 free_page_count;
+    U32 vir_block_addr:16;
+    U32 free_page_count:16;
 };
 
 struct pu_info_t
@@ -120,6 +121,7 @@ struct pu_info_t
     U32 block_count:16;
     U32 free_block_count:16;
     U32 bad_block_count:16;
+    U16 bad_block_addr[MAX_BB_PER_PLN];
     struct block_info_t block_info[BLK_PER_PLN];
 };
 
@@ -130,6 +132,7 @@ struct pu_info_t
 /*============================================================================*/
 /* function declaration region: declare global function prototype             */
 /*============================================================================*/
+void table_init(void);
 void table_llf_bbt(void);
 void table_llf_vbt(void);
 void table_llf_pbt(void);
@@ -144,7 +147,13 @@ U32 flash_alloc_block(U32 pu);
 U32 table_update_pmt(U32 lpn, const struct flash_addr_t *new_vir_addr);
 U32 table_lookup_pmt(U32 lpn, struct flash_addr_t *dest_vir_addr);
 
+U32 update_tables_after_erase(U32 pu, U32 phy_block_addr, U32 erase_status);
 
+void table_set_vir_block(U32 pu, U32 phy_block_addr, U32 vir_block_addr);
+U32 table_get_vir_block(U32 pu, U32 phy_block_addr);
+void table_set_phy_block(U32 pu, U32 vir_block_addr, U32 phy_block_addr);
+U32 table_get_phy_block(U32 pu, U32 vir_block_addr);
+U32 search_a_valid_block(U32 pu, U32 start_phy_block_addr);
 
 #endif
 /*====================End of this head file===================================*/

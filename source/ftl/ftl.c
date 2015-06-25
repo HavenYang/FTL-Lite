@@ -82,9 +82,10 @@ void other_init(void)
 
 U32 ftl_llf(void)
 {
+    init_pu_info();
     table_llf_bbt();
     table_llf_vbt();
-    table_llf_pbt();
+    //table_llf_pbt();  //pbt info move to the blockinfo in pu_info
     table_llf_pmt();
     table_llf_rpmt();
     return 0;
@@ -92,8 +93,9 @@ U32 ftl_llf(void)
 
 U32 ftl_init(void)
 {
+    table_init();
     ftl_llf();
-    init_pu_info();
+    
     other_init();
 	return 0;
 }
@@ -225,6 +227,14 @@ EFRT read_request_type(const struct ftl_req_t *read_request)
         return FRT_RAN_READ;
     }
 
+    for (i = 0; i < LPN_PER_BUF; i++)
+    {
+        if (TRUE == hit_unflush_buffer(read_request->lpn_list[i]))
+        {
+            return FRT_RAN_READ;
+        }
+    }
+
     table_lookup_pmt(read_request->lpn_list[0], &curr_vir_addr);
     if (0 != curr_vir_addr.lpn_in_page)
     {
@@ -277,6 +287,14 @@ U32 ftl_read(const struct ftl_req_t *read_request)
         for (i = 0; i < read_request->lpn_count; i++)
         {
             lpn = read_request->lpn_list[i];
+
+            if (hit_unflush_buffer(lpn))
+            {
+                hit_read(lpn, read_request->buffer_addr + LPN_SIZE * i);
+                printf("read hit unflush, lpn = %d!\n", lpn);
+                continue;
+            }
+            
             table_lookup_pmt(lpn, &vir_addr);
 
             if (addr_valid(&vir_addr))
@@ -291,7 +309,7 @@ U32 ftl_read(const struct ftl_req_t *read_request)
             }
             else
             {
-                printf("read without write!\n");
+                printf("read without write, lpn = %d!\n", lpn);
             }
         }
     }
@@ -299,6 +317,47 @@ U32 ftl_read(const struct ftl_req_t *read_request)
     return SUCCESS;
 }
 
+
+U32 hit_unflush_buffer(U32 lpn)
+{
+    U32 pu;
+    U32 i;
+    struct ftl_req_t* uwr;
+
+    pu = get_pu_from_lpn(lpn);
+    uwr = &unfull_write_req[pu];
+
+    for (i = 0; i < uwr->lpn_count; i++)
+    {
+        if (lpn == uwr->lpn_list[i])
+        {
+            return TRUE;
+        }
+    }
+
+    return FALSE;
+}
+
+U32 hit_read(U32 lpn, U32 buffer_addr)
+{
+    U32 pu;
+    U32 i;
+    struct ftl_req_t* uwr;
+
+    pu = get_pu_from_lpn(lpn);
+    uwr = &unfull_write_req[pu];
+
+    for (i = 0; i < uwr->lpn_count; i++)
+    {
+        if (lpn == uwr->lpn_list[i])
+        {
+            memcpy((void*)buffer_addr, (void*)(uwr->buffer_addr + LPN_SIZE * i), LPN_SIZE);
+            return TRUE;
+        }
+    }
+
+    return FALSE;
+}
 
 /*====================End of this file========================================*/
 

@@ -88,6 +88,7 @@ printf("%s, line %d : %s\n",__FILE__,__LINE__, (str)); \
 dbg_getch();\
 }while(0)
 
+#define dbg_print printf
 
 #define assert_null_pointer(p)  if (NULL == (p)) {fatalerror("null pointer");}
 

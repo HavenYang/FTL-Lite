@@ -56,7 +56,7 @@
 #define LPN_CNT_PER_PMTPAGE     (PMT_PAGE_SIZE / PMT_ITEM_SIZE)
 
 // 32KB * 512 * 1024 = 16GB per PU
-#define RSV_BLOCK               10
+#define RSV_BLOCK               20
 #define LPN_IN_BLK              (1 << (PG_PER_BLK_BITS + LPN_PER_BUF_BITS))
 #define LPN_IN_PU               (LPN_IN_BLK * (BLK_PER_PLN - RSV_BLOCK))
 
@@ -67,6 +67,8 @@
 
 #define PMT_PAGE_IN_PU          (LPN_IN_PU/LPN_CNT_PER_PMTPAGE)
 #define PMT_PAGE_CNT            (MAX_LPN_IN_DISK/LPN_CNT_PER_PMTPAGE)
+
+#define MAX_BB_PER_PLN          (RSV_BLOCK - 2)
 
 
 /*============================================================================*/

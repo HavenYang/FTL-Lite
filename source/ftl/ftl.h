@@ -91,6 +91,8 @@ U32 addr_invalid(const struct flash_addr_t *flash_addr);
 U32 ftl_write(const struct ftl_req_t *write_request);
 U32 ftl_read(const struct ftl_req_t *read_request);
 
+U32 hit_unflush_buffer(U32 lpn);
+U32 hit_read(U32 lpn, U32 buffer_addr);
 
 #endif
 /*====================End of this head file===================================*/

@@ -14,7 +14,7 @@
 #include "disk_config.h"
 #include "ftl.h"
 #include "sim_flash.h"
-
+#include "table.h"
 /*============================================================================*/
 /* #define region: constant & MACRO defined here                              */
 /*============================================================================*/
@@ -74,19 +74,17 @@ U32 flash_read(struct flash_addr_t *phy_addr, struct flash_req_t *read_req)
 
 U32 flash_erase(U32 pu, U32 phy_block_addr)
 {
-    U32 vir_blk = pbt[pu]->item[phy_block_addr].virtual_block_addr;
-    
     if (SUCCESS == sim_flash_erase_block(pu, phy_block_addr))
     {
-        pbt[pu]->item[phy_block_addr].block_erase_count++;
-        vbt[pu]->item[vir_blk]->lpn_dirty_count = 0;
-        pu_info[pu]->free_block_count++;
-        pu_info[pu]->block_info[phy_block_addr].erase_count++;
+        update_tables_after_erase(pu, phy_block_addr, SUCCESS);
+        
+        return SUCCESS;
     }
     else
     {
-        pu_info[pu]->bad_block_count++;
-        pu_info[pu]->block_info[phy_block_addr].status = BLOCK_STATUS_BADBLCOK;
+        update_tables_after_erase(pu, phy_block_addr, ERROR_FLASH_ERASE);
+        
+        return ERROR_FLASH_ERASE;
     }
 }
 
