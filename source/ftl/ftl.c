@@ -66,6 +66,17 @@ U32 get_puinfo_baseaddr(void)
     return PUINFO_BASE_ADDR;
 }
 
+static void reset_uwr(struct ftl_req_t* uwr)
+{
+    U32 i;
+
+    uwr->lpn_count = 0;
+
+    for (i = 0; i < LPN_PER_BUF; i++)
+    {
+        uwr->lpn_list[i] = INVALID_8F;
+    }
+}
 
 void other_init(void)
 {
@@ -77,6 +88,7 @@ void other_init(void)
     {
         unfull_write_req[pu].request_type = FRT_RAN_WRITE;
         unfull_write_req[pu].buffer_addr = BUFFER_DRAM_ADDR + BUF_SIZE * pu;
+        reset_uwr(&unfull_write_req[pu]);
     }
 }
 
@@ -97,7 +109,7 @@ U32 ftl_init(void)
     ftl_llf();
     
     other_init();
-	return 0;
+    return 0;
 }
 
 U32 get_pu_from_lpn(U32 lpn)
@@ -168,34 +180,120 @@ static U32 ftl_write_full_page(const struct ftl_req_t *write_request)
     return flash_write(&phy_addr, &flash_write_req);
 }
 
-U32 ftl_write(const struct ftl_req_t *write_request)
+
+
+static U32 add_to_uwr(U32 lpn, U32 data_buffer)
 {
-    U32 lpn;
     U32 pu;
     U32 i;
-    struct ftl_req_t* rwr;   /* random write temp request */
+    struct ftl_req_t* uwr;
+    U32 hit = FALSE;
+    
+    pu = get_pu_from_lpn(lpn);
+    uwr = &unfull_write_req[pu];
+
+    if (uwr->lpn_count > 0)
+    {
+        for (i = 0; i < LPN_PER_BUF; i++)
+        {
+            if (lpn == uwr->lpn_list[i])
+            {
+                dbg_print("write hit, lpn = %d\n", lpn);
+                hit = TRUE;
+                uwr->lpn_count++;
+                memcpy((void*)(uwr->buffer_addr + i * LPN_SIZE), (void*)data_buffer, LPN_SIZE);
+                break;
+            }
+        }
+    }
+
+    if (FALSE == hit)
+    {
+        for (i = 0; i < LPN_PER_BUF; i++)
+        {
+            if (INVALID_8F == uwr->lpn_list[i])
+            {
+                uwr->lpn_list[i] = lpn;
+                uwr->lpn_count++;
+                memcpy((void*)(uwr->buffer_addr + i * LPN_SIZE), (void*)data_buffer, LPN_SIZE);
+                break;
+            }
+        }
+
+    }
+
+    if (LPN_PER_BUF == uwr->lpn_count)
+    {
+        ftl_write_full_page(uwr);
+        reset_uwr(uwr);
+    }
+    
+    return SUCCESS;
+}
+
+void update_uwr(U32 start_lpn)
+{
+    U32 pu;
+    U32 lpn_count;
+    U32 lpn_in_uwr;
+    U32 i;
+    struct ftl_req_t* uwr;
+
+    pu = get_pu_from_lpn(start_lpn);
+
+    uwr = &unfull_write_req[pu];
+    lpn_count = uwr->lpn_count;
+
+    if (lpn_count >= LPN_PER_BUF)
+    {
+        fatalerror("lpn count in uwr error");
+    }
+
+    for (i = 0; i < LPN_PER_BUF; i++)
+    {
+        if (0 == lpn_count)
+        {
+            break;
+        }
+
+        lpn_in_uwr = uwr->lpn_list[i];
+
+        if (INVALID_8F != lpn_in_uwr)
+        {
+            if ((lpn_in_uwr >= start_lpn) && (lpn_in_uwr < start_lpn + LPN_PER_BUF))
+            {
+                dbg_print("overwrite uwr, lpn = %d\n", lpn_in_uwr);
+                uwr->lpn_count--;
+                uwr->lpn_list[i] = INVALID_8F;
+            }
+
+            lpn_count--;
+        }
+    }
+}
+
+U32 ftl_write(const struct ftl_req_t *write_request)
+{
+    U32 i;
 
     assert_null_pointer(write_request);
 
     if (FRT_SEQ_WRITE == write_request->request_type)
     {
+        if ((LPN_PER_BUF != write_request->lpn_count) || (lpn_not_page_align(write_request->lpn_list[0])))
+        {
+            fatalerror("not seq write");
+        }
+
+        update_uwr(write_request->lpn_list[0]);
+        
         return ftl_write_full_page(write_request);
     }
     else if(FRT_RAN_WRITE == write_request->request_type)
     {
         for (i = 0; i < write_request->lpn_count; i++)
         {
-            lpn = write_request->lpn_list[i];
-            pu = get_pu_from_lpn(lpn);
-            rwr = &unfull_write_req[pu];
-            rwr->lpn_list[rwr->lpn_count] = lpn;
-            memcpy((void*)(rwr->buffer_addr + rwr->lpn_count * LPN_SIZE), (void*)(write_request->buffer_addr + i * LPN_SIZE), LPN_SIZE);
-            rwr->lpn_count++;
-            if (LPN_PER_BUF == rwr->lpn_count)
-            {
-                ftl_write_full_page(rwr);
-                rwr->lpn_count = 0;
-            }
+            add_to_uwr(write_request->lpn_list[i], write_request->buffer_addr + LPN_SIZE * i);
         }
     }
     else
