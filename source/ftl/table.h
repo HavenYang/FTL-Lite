@@ -60,7 +60,7 @@ struct rpmt_item_t
 
 struct rpmt_t
 {
-    struct rpmt_item_t block[BLK_PER_PLN];
+    struct rpmt_item_t block[vBLK_PER_PLN];
 };
 
 /* virtual block information table : point to physical block  */
@@ -81,7 +81,7 @@ struct vbt_item_t
 
 struct vbt_t
 {
-    struct vbt_item_t item[BLK_PER_PLN];
+    struct vbt_item_t item[vBLK_PER_PLN];
 };
 
 
@@ -103,7 +103,7 @@ struct pbt_item_t
 
 struct pbt_t
 {
-    struct pbt_item_t item[BLK_PER_PLN];
+    struct pbt_item_t item[pBLK_PER_PLN];
 };
 
 
@@ -122,7 +122,7 @@ struct pu_info_t
     U32 free_block_count:16;
     U32 bad_block_count:16;
     U16 bad_block_addr[MAX_BB_PER_PLN];
-    struct block_info_t block_info[BLK_PER_PLN];
+    struct block_info_t block_info[pBLK_PER_PLN];
 };
 
 /*============================================================================*/

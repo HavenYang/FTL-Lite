@@ -86,7 +86,7 @@ void sim_check_flash_addr(const struct flash_addr_t *phy_addr)
         fatalerror("pu num overflow");
     }
 
-    if (phy_addr->block_in_pu >= BLK_PER_PLN)
+    if (phy_addr->block_in_pu >= pBLK_PER_PLN)
     {
         fatalerror("block num overflow");
     }
@@ -140,6 +140,10 @@ static void sim_get_flash_data(const struct sim_flash_lpn_data_t* lpn_data, U32 
 
 U32 sim_flash_erase_block(U32 pu, U32 block)
 {
+    if (pu == 0 && block == 0)
+    {
+        return SIM_FAIL;
+    }
     return SIM_SUCCESS;
 }
 

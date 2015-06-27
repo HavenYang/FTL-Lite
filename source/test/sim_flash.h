@@ -37,7 +37,7 @@ struct sim_flash_block_data_t
 
 struct sim_flash_pu_data_t
 {
-    struct sim_flash_block_data_t block[BLK_PER_PLN];
+    struct sim_flash_block_data_t block[pBLK_PER_PLN];
 };
 
 

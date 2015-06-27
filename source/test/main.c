@@ -132,7 +132,6 @@ int main(int argc, char* argv)
 {
     if (SIM_SUCCESS == test_env_init())
     {
-        
         ftl_init();
         
         run_test_cases();
