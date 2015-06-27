@@ -377,7 +377,14 @@ struct flash_addr_t *get_loc_in_pmt(U32 lpn)
 
 U32 table_update_pmt(U32 lpn, const struct flash_addr_t *new_vir_addr)
 {
-    struct flash_addr_t *old_vir_addr = get_loc_in_pmt(lpn);
+    struct flash_addr_t *old_vir_addr;
+
+    if (lpn >= MAX_LPN_IN_DISK)
+    {
+        fatalerror("invalid lpn");
+    }
+
+    old_vir_addr = get_loc_in_pmt(lpn);
 
     table_update_rpmt(lpn, old_vir_addr, new_vir_addr);
     

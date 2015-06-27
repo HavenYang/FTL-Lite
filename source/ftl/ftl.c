@@ -200,7 +200,7 @@ static U32 add_to_uwr(U32 lpn, U32 data_buffer)
             {
                 dbg_print("write hit, lpn = %d\n", lpn);
                 hit = TRUE;
-                uwr->lpn_count++;
+                //uwr->lpn_count++;
                 memcpy((void*)(uwr->buffer_addr + i * LPN_SIZE), (void*)data_buffer, LPN_SIZE);
                 break;
             }
