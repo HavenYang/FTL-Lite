@@ -312,6 +312,9 @@ struct flash_addr_t flash_alloc_page(U32 pu)
         else
         {
             target_vir_addr.ppn = 0xfffffffful;
+
+            dbg_print("no free flash resource in pu(%d)\n",pu);
+            fatalerror("no free block");
         }
     }
 

@@ -420,16 +420,36 @@ U32 hit_unflush_buffer(U32 lpn)
 {
     U32 pu;
     U32 i;
+    U32 buffer_lpn_count;
     struct ftl_req_t* uwr;
 
     pu = get_pu_from_lpn(lpn);
     uwr = &unfull_write_req[pu];
+    buffer_lpn_count = uwr->lpn_count;
 
-    for (i = 0; i < uwr->lpn_count; i++)
+    if (0 == buffer_lpn_count)
     {
+        return FALSE;
+    }
+
+    for (i = 0; i < LPN_PER_BUF; i++)
+    {
+        if (INVALID_8F == uwr->lpn_list[i])
+        {
+            continue;
+        }
+
         if (lpn == uwr->lpn_list[i])
         {
             return TRUE;
+        }
+        else
+        {
+            buffer_lpn_count--;
+            if (0 == buffer_lpn_count)
+            {
+                break;
+            }
         }
     }
 
@@ -445,7 +465,7 @@ U32 hit_read(U32 lpn, U32 buffer_addr)
     pu = get_pu_from_lpn(lpn);
     uwr = &unfull_write_req[pu];
 
-    for (i = 0; i < uwr->lpn_count; i++)
+    for (i = 0; i < LPN_PER_BUF; i++)
     {
         if (lpn == uwr->lpn_list[i])
         {
@@ -454,6 +474,7 @@ U32 hit_read(U32 lpn, U32 buffer_addr)
         }
     }
 
+    fatalerror("no hit but run into hit_read");
     return FALSE;
 }
 

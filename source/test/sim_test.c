@@ -272,6 +272,44 @@ void test_read_whole_disk(void)
     sim_read(0, MAX_LPN_IN_DISK);
 }
 
+U32 random_op_count = 0;
+void test_random_readwrite(void)
+{
+    U32 running;
+    U32 write_start_lpn;
+    U32 write_lpn_count;
+    U32 read_start_lpn;
+    U32 read_lpn_count;
+
+    running = 1;
+    srand(MAX_LPN_IN_DISK - 1);
+    
+    while(running)
+    {
+        write_start_lpn = rand();
+        write_lpn_count = rand();
+        read_start_lpn = rand();
+        read_lpn_count = rand();
+
+        if (write_start_lpn + write_lpn_count >= MAX_LPN_IN_DISK)
+        {
+            write_lpn_count = MAX_LPN_IN_DISK - write_start_lpn;
+        }
+
+        if (read_start_lpn + read_lpn_count >= MAX_LPN_IN_DISK)
+        {
+            read_lpn_count = MAX_LPN_IN_DISK - read_start_lpn;
+        }
+
+        dbg_print("%d random write(%d,%d)\n", random_op_count, write_start_lpn, write_lpn_count);
+        sim_write(write_start_lpn, write_lpn_count);
+        dbg_print("%d random read(%d,%d)\n", random_op_count, read_start_lpn, read_lpn_count);
+        sim_read(read_start_lpn, read_lpn_count);
+
+        random_op_count++;
+    }
+}
+
 void run_test_cases(void)
 {
     test_write_whole_disk();
@@ -287,6 +325,8 @@ void run_test_cases(void)
     sim_write(10,3);
     sim_read(10,3);
     test_read_whole_disk();
+
+    test_random_readwrite();
 }
 
 
