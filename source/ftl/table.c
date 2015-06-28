@@ -17,7 +17,7 @@
 #include "table.h"
 #include "ftl.h"
 #include "flash_interface.h"
-
+#include "gc.h"
 /*============================================================================*/
 /* #define region: constant & MACRO defined here                              */
 /*============================================================================*/
@@ -321,9 +321,9 @@ struct flash_addr_t flash_alloc_page(U32 pu)
     {
         curr_block = flash_alloc_block(pu);
 
-        if (puinfo->free_block_count < FTL_RSV_BLOCK/2)
+        if (puinfo->free_block_count < (BB_RSV_BLOCK + FTL_RSV_BLOCK/2))
         {
-            //try_garbage_collection(pu);
+            gc_start(pu);
         }
 
         if (0xfffffffful != curr_block)
@@ -336,7 +336,6 @@ struct flash_addr_t flash_alloc_page(U32 pu)
         else
         {
             target_vir_addr.ppn = 0xfffffffful;
-
         }
     }
 
@@ -371,7 +370,8 @@ U32 table_update_rpmt(U32 lpn, const struct flash_addr_t *old_addr, const struct
         if (LPN_IN_BLK == vbt[old_pu]->item[old_blk].lpn_dirty_count)
         {
             flash_erase(old_pu, vbt[old_pu]->item[old_blk].phy_block_addr);
-            dbg_print("erase a all dirty block, pu(%d) blk(%d)\n", old_pu, old_blk);
+            dbg_print("erase a all dirty block, pu(%d) vblk(%d) pblk(%d)\n", 
+            old_pu, old_blk, vbt[old_pu]->item[old_blk].phy_block_addr);
         }
     }
 

@@ -59,6 +59,8 @@ typedef enum _efrt
     FRT_SEQ_READ,
     FRT_RAN_WRITE,
     FRT_RAN_READ,
+    FRT_GC_WRITE,
+    FRT_GC_READ,
     FRT_IVLD,
 }EFRT;
 

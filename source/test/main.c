@@ -75,7 +75,7 @@ void dbg_getch(void)
 
 U32 sim_dram_init(void)
 {
-    g_device_dram_size = (sizeof(struct tables) + BUF_SIZE) * MAX_PU_NUM;
+    g_device_dram_size = (sizeof(struct tables) + BUF_SIZE*2) * MAX_PU_NUM;
     g_device_dram_addr = (U8*)malloc(g_device_dram_size);
 
     assert_null_pointer(g_device_dram_addr);

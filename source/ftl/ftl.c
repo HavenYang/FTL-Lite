@@ -90,6 +90,8 @@ void other_init(void)
         unfull_write_req[pu].buffer_addr = BUFFER_DRAM_ADDR + BUF_SIZE * pu;
         reset_uwr(&unfull_write_req[pu]);
     }
+
+    gc_init();
 }
 
 U32 ftl_llf(void)
@@ -198,7 +200,7 @@ static U32 add_to_uwr(U32 lpn, U32 data_buffer)
         {
             if (lpn == uwr->lpn_list[i])
             {
-                dbg_print("write hit, lpn = %d\n", lpn);
+                //dbg_print("write hit, lpn = %d\n", lpn);
                 hit = TRUE;
                 //uwr->lpn_count++;
                 memcpy((void*)(uwr->buffer_addr + i * LPN_SIZE), (void*)data_buffer, LPN_SIZE);
@@ -262,7 +264,7 @@ void update_uwr(U32 start_lpn)
         {
             if ((lpn_in_uwr >= start_lpn) && (lpn_in_uwr < start_lpn + LPN_PER_BUF))
             {
-                dbg_print("overwrite uwr, lpn = %d\n", lpn_in_uwr);
+                //dbg_print("overwrite uwr, lpn = %d\n", lpn_in_uwr);
                 uwr->lpn_count--;
                 uwr->lpn_list[i] = INVALID_8F;
             }
@@ -389,7 +391,7 @@ U32 ftl_read(const struct ftl_req_t *read_request)
             if (hit_unflush_buffer(lpn))
             {
                 hit_read(lpn, read_request->buffer_addr + LPN_SIZE * i);
-                printf("read hit unflush, lpn = %d!\n", lpn);
+                //printf("read hit unflush, lpn = %d!\n", lpn);
                 continue;
             }
             
