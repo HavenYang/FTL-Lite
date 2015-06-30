@@ -17,6 +17,7 @@
 #include "flash_interface.h"
 #include "ftl.h"
 #include "table.h"
+#include "gc.h"
 /*============================================================================*/
 /* #define region: constant & MACRO defined here                              */
 /*============================================================================*/

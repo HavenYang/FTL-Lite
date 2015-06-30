@@ -76,13 +76,13 @@ U32 flash_erase(U32 pu, U32 phy_block_addr)
 {
     if (SUCCESS == sim_flash_erase_block(pu, phy_block_addr))
     {
-        update_tables_after_erase(pu, phy_block_addr, SUCCESS);
+        //update_tables_after_erase(pu, phy_block_addr, SUCCESS);
         
         return SUCCESS;
     }
     else
     {
-        update_tables_after_erase(pu, phy_block_addr, ERROR_FLASH_ERASE);
+        //update_tables_after_erase(pu, phy_block_addr, ERROR_FLASH_ERASE);
         
         return ERROR_FLASH_ERASE;
     }

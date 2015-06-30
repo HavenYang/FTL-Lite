@@ -256,7 +256,7 @@ void sim_read(U32 start_lpn, U32 lpn_count)
 
     while(remain > 0)
     {
-        sim_random_write_lpn(lpn++);
+        sim_random_read_lpn(lpn++);
         remain--;
     }
 }
@@ -273,6 +273,13 @@ void test_read_whole_disk(void)
 }
 
 U32 random_op_count = 0;
+
+U32 gen_random_number(U32 max_num)
+{
+    return rand()%max_num;
+}
+
+
 void test_random_readwrite(void)
 {
     U32 running;
@@ -282,31 +289,33 @@ void test_random_readwrite(void)
     U32 read_lpn_count;
 
     running = 1;
-    srand(MAX_LPN_IN_DISK - 1);
     
     while(running)
     {
-        write_start_lpn = rand();
-        write_lpn_count = rand();
-        read_start_lpn = rand();
-        read_lpn_count = rand();
+        write_start_lpn = gen_random_number(MAX_LPN_IN_DISK);
+        write_lpn_count = gen_random_number(LPN_PER_BUF);
 
         if (write_start_lpn + write_lpn_count >= MAX_LPN_IN_DISK)
         {
             write_lpn_count = MAX_LPN_IN_DISK - write_start_lpn;
         }
 
-        if (read_start_lpn + read_lpn_count >= MAX_LPN_IN_DISK)
+        sim_write(write_start_lpn, write_lpn_count);
+        random_op_count++;
+        
+        if (0 == random_op_count%5000)
         {
-            read_lpn_count = MAX_LPN_IN_DISK - read_start_lpn;
+            dbg_print("%d random write(%d,%d)\n", random_op_count, write_start_lpn, write_lpn_count);
+            read_start_lpn = gen_random_number(MAX_LPN_IN_DISK);
+            read_lpn_count = gen_random_number(MAX_LPN_IN_DISK);
+            if (read_start_lpn + read_lpn_count >= MAX_LPN_IN_DISK)
+            {
+                read_lpn_count = MAX_LPN_IN_DISK - read_start_lpn;
+            }
+            dbg_print("%d random read(%d,%d)\n", random_op_count/5000, read_start_lpn, read_lpn_count);
+            sim_read(read_start_lpn, read_lpn_count);
         }
 
-        dbg_print("%d random write(%d,%d)\n", random_op_count, write_start_lpn, write_lpn_count);
-        sim_write(write_start_lpn, write_lpn_count);
-        dbg_print("%d random read(%d,%d)\n", random_op_count, read_start_lpn, read_lpn_count);
-        sim_read(read_start_lpn, read_lpn_count);
-
-        random_op_count++;
     }
 }
 

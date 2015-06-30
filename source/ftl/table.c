@@ -67,12 +67,26 @@ void table_llf_bbt(void)
 {
     U32 pu;
     U32 block;
+    U32 success_count;
 
     for (pu = 0; pu < MAX_PU_NUM; pu++)
     {
+        success_count = 0;
+        
         for (block = 0; block < pBLK_PER_PLN; block++)
         {
-            flash_erase(pu, block);
+            if (SUCCESS == flash_erase(pu, block))
+            {
+                success_count++;
+                if (success_count <= vBLK_PER_PLN)
+                {
+                    update_tables_after_erase(pu, block, SUCCESS);
+                }
+            }
+            else
+            {
+                update_tables_after_erase(pu, block, ERROR_FLASH_ERASE);
+            }
         }
     }
 }
@@ -93,12 +107,16 @@ void table_llf_vbt(void)
             vbt[pu]->item[v_blk].reserved = 0;
             
             p_blk = search_a_valid_block(pu, p_blk);
-            table_set_phy_block(pu, v_blk, p_blk);
 
             if (INVALID_8F != p_blk)
             {
                 table_set_vir_block(pu, p_blk, v_blk);
+                table_set_phy_block(pu, v_blk, p_blk);
                 p_blk++;
+            }
+            else
+            {
+                fatalerror("not enough valid phy block in pu");
             }
         }
     }
@@ -170,7 +188,7 @@ void table_llf_rpmt(void)
 
 void table_init_block_info(struct block_info_t* block_info)
 {
-    block_info->status = BLOCK_STATUS_FREE;
+    block_info->status = BLOCK_STATUS_RSV;
     block_info->erase_count = 0;    //to be defined
     block_info->free_page_count = PG_PER_BLK;
     block_info->vir_block_addr = 0xffff;
@@ -243,7 +261,7 @@ U32 flash_alloc_block(U32 pu)
     struct block_info_t *blockinfo;
     U32 phy_block;
     U32 vir_block = INVALID_8F;
-
+    U32 loop = 0;
     
     puinfo = pu_info[pu];
 
@@ -254,7 +272,7 @@ U32 flash_alloc_block(U32 pu)
     
     phy_block = puinfo->curr_block;
 
-    while (TRUE)//(BLOCK_STATUS_FREE != blockinfo->status)
+    while (loop++ < pBLK_PER_PLN)//(BLOCK_STATUS_FREE != blockinfo->status)
     {
         blockinfo = &puinfo->block_info[phy_block];
 
@@ -316,12 +334,17 @@ struct flash_addr_t flash_alloc_page(U32 pu)
         target_vir_addr.block_in_pu = blockinfo->vir_block_addr;
         target_vir_addr.page_in_block = PG_PER_BLK - blockinfo->free_page_count;
         blockinfo->free_page_count--;
+
+        if (0 == blockinfo->free_page_count)
+        {
+            blockinfo->status = BLOCK_STATUS_FULL;
+        }
     }
     else
     {
         curr_block = flash_alloc_block(pu);
 
-        if (puinfo->free_block_count < (BB_RSV_BLOCK + FTL_RSV_BLOCK/2))
+        if (puinfo->free_block_count < (FTL_RSV_BLOCK/2))
         {
             gc_start(pu);
         }
@@ -349,11 +372,12 @@ U32 table_update_rpmt(U32 lpn, const struct flash_addr_t *old_addr, const struct
     U32 old_pu;
     U32 old_blk;
     U32 old_page;
+
+    static struct flash_addr_t debug_addr;
     
-    assert_null_pointer(old_addr);
     assert_null_pointer(new_addr);
 
-    if (addr_valid(old_addr))
+    if ((NULL != old_addr) && addr_valid(old_addr))
     {
         if (old_addr->pu_index != new_addr->pu_index)
         {
@@ -364,19 +388,39 @@ U32 table_update_rpmt(U32 lpn, const struct flash_addr_t *old_addr, const struct
         old_page = old_addr->page_in_block;
         
         old_rpmt = &rpmt[old_pu]->block[old_blk];
+
+        if (lpn != old_rpmt->lpn[old_page * LPN_PER_BUF + old_addr->lpn_in_page])
+        {
+            dbg_print("lpn(%d)=>vaddr(%d-%d-%d-%d),ppn(0x%x)=>rpmt->lpn(%d)\n",
+            lpn,old_pu,old_blk,old_page,old_addr->lpn_in_page,old_addr->ppn,
+            old_rpmt->lpn[old_page * LPN_PER_BUF + old_addr->lpn_in_page]);
+
+            old_rpmt = &rpmt[debug_addr.pu_index]->block[debug_addr.block_in_pu];
+            dbg_print("last valid vaddr->ppn(0x%x) => rpmt->lpn(%d)\n",debug_addr.ppn,
+            old_rpmt->lpn[debug_addr.page_in_block * LPN_PER_BUF + debug_addr.lpn_in_page]);
+            
+            fatalerror("rpmt not match pmt");
+        }
+        
         old_rpmt->lpn[old_page * LPN_PER_BUF + old_addr->lpn_in_page] = 0xfffffffful;
         vbt[old_pu]->item[old_blk].lpn_dirty_count++;
 
-        if (LPN_IN_BLK == vbt[old_pu]->item[old_blk].lpn_dirty_count)
+        /*if (LPN_IN_BLK == vbt[old_pu]->item[old_blk].lpn_dirty_count)
         {
             flash_erase(old_pu, vbt[old_pu]->item[old_blk].phy_block_addr);
             dbg_print("erase a all dirty block, pu(%d) vblk(%d) pblk(%d)\n", 
             old_pu, old_blk, vbt[old_pu]->item[old_blk].phy_block_addr);
-        }
+        }*/
     }
 
     new_rpmt = &rpmt[new_addr->pu_index]->block[new_addr->block_in_pu];
     new_rpmt->lpn[new_addr->page_in_block * LPN_PER_BUF + new_addr->lpn_in_page] = lpn;
+
+    if ((24627 == lpn)||(16610 == lpn))
+    {
+        dbg_print("lpn(%d): vaddr ppn from 0x%x to 0x%x\n",lpn, old_addr->ppn, new_addr->ppn);
+        debug_addr.ppn = new_addr->ppn;
+    }
 
     return SUCCESS;
 }
@@ -444,6 +488,7 @@ U32 update_tables_after_erase(U32 pu, U32 phy_block_addr, U32 erase_status)
     {
         pu_info[pu]->bad_block_addr[pu_info[pu]->bad_block_count] = phy_block_addr;
         pu_info[pu]->bad_block_count++;
+        pu_info[pu]->block_info[phy_block_addr].erase_count++;
         pu_info[pu]->block_info[phy_block_addr].status = BLOCK_STATUS_BADBLCOK;
         vbt[pu]->item[vir_block_addr].phy_block_addr = 0xffff;
         //pbt[pu]->item[phy_block_addr].virtual_block_addr = 0xffff;
@@ -489,7 +534,8 @@ U32 search_a_valid_block(U32 pu, U32 start_phy_block_addr)
 
     for (p_blk = start_phy_block_addr; p_blk < pBLK_PER_PLN; p_blk++)
     {
-        if (BLOCK_STATUS_BADBLCOK != pu_info[pu]->block_info[p_blk].status)
+        if ((BLOCK_STATUS_BADBLCOK != pu_info[pu]->block_info[p_blk].status)
+        &&(BLOCK_STATUS_RSV != pu_info[pu]->block_info[p_blk].status))
         {
             return p_blk;
         }

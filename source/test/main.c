@@ -24,7 +24,7 @@
 /* #define region: constant & MACRO defined here                              */
 /*============================================================================*/
 
-
+void test_env_exit(void);
 
 struct tables
 {
@@ -70,6 +70,8 @@ void dbg_getch(void)
         ulTestLoop++;
     }
     g_ulDbgEnable = 1;
+
+    test_env_exit();
 }
 
 
@@ -126,18 +128,20 @@ void test_env_exit(void)
 {
     sim_dram_exit();
     sim_flash_exit();
+    exit(0);
 }
 
 int main(int argc, char* argv)
 {
-    if (SIM_SUCCESS == test_env_init())
+    if (SIM_SUCCESS != test_env_init())
     {
-        ftl_init();
-        
-        run_test_cases();
-        
-        test_env_exit();
+        return 1;
     }
+    
+    ftl_init();    
+    run_test_cases();
+
+    test_env_exit();
 
     return 0;
 }

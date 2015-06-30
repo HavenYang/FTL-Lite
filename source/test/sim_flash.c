@@ -140,6 +140,21 @@ static void sim_get_flash_data(const struct sim_flash_lpn_data_t* lpn_data, U32 
 
 U32 sim_flash_erase_block(U32 pu, U32 block)
 {
+    struct sim_flash_block_data_t *blockdata;
+    U32 page;
+    U32 lpn_in_page;
+
+    blockdata = &sim_flash_data[pu]->block[block];
+
+    for (page = 0; page < PG_PER_BLK; page++)
+    {
+        for (lpn_in_page = 0; lpn_in_page < LPN_PER_BUF; lpn_in_page++)
+        {
+            blockdata->page[page].lpn[lpn_in_page].lpn = INVALID_8F;
+            blockdata->page[page].lpn[lpn_in_page].write_count = INVALID_8F;
+        }
+    }
+
     if (pu == 0 && block == 0)
     {
         return SIM_FAIL;

@@ -10,7 +10,7 @@ extern struct vbt_t *vbt[MAX_PU_NUM];
 extern struct rpmt_t *rpmt[MAX_PU_NUM];
 extern struct pu_info_t *pu_info[MAX_PU_NUM];
 
-static U32 gc_dest_block[PU_NUM] = {INVALID_8F};
+static U32 gc_dst_block[PU_NUM] = {INVALID_8F};
 
 LOCAL struct ftl_req_t gc_req[PU_NUM];
 
@@ -42,27 +42,43 @@ void gc_init(void)
     }
 }
 
-U32 gc_search_source_block(U32 pu)
+U32 gc_search_source_block(U32 pu, U32* dirty_count)
 {
     U32 i;
     struct vbt_t *vbtinfo;
+    struct pu_info_t *puinfo;
     U32 vir_block = 0;
+    U32 p_blk;
     U32 max_dirty_count = 0;
 
     vbtinfo = vbt[pu];
+    puinfo = pu_info[pu];
 
     for (i = 0; i < vBLK_PER_PLN; i++)
     {
-        if (vbtinfo->item[i].lpn_dirty_count > max_dirty_count)
+        p_blk = vbtinfo->item[i].phy_block_addr;
+
+        if (p_blk >= pBLK_PER_PLN)
+        {
+            fatalerror("invalid phy block addr");
+        }
+        
+        if ((BLOCK_STATUS_FULL == puinfo->block_info[p_blk].status)
+        && (vbtinfo->item[i].lpn_dirty_count > max_dirty_count))
         {
             vir_block = i;
             max_dirty_count = vbtinfo->item[i].lpn_dirty_count;
+
+            if (LPN_IN_BLK == max_dirty_count)
+            {
+                break;
+            }
         }
     }
 
-    dbg_print("try gc pu(%d) vblk(%d) dirtycount(%d)\n",pu,vir_block,max_dirty_count);
+    *dirty_count = max_dirty_count;
 
-    if (max_dirty_count < LPN_IN_BLK/2) /* not need gc */
+    if (0 == max_dirty_count)
     {
         vir_block = INVALID_8F;
     }
@@ -77,12 +93,12 @@ U32 gc_alloc_page(U32 pu)
     struct block_info_t *blockinfo;
     U32 dst_p_blk;
 
-    if (INVALID_8F == gc_dest_block[pu])
+    if (INVALID_8F == gc_dst_block[pu])
     {
-        gc_dest_block[pu] = flash_alloc_block(pu);
+        gc_dst_block[pu] = flash_alloc_block(pu);
     }
 
-    dst_p_blk = gc_dest_block[pu];
+    dst_p_blk = gc_dst_block[pu];
 
     target_vir_addr.pu_index = pu;
     target_vir_addr.lpn_in_page = 0;
@@ -95,6 +111,11 @@ U32 gc_alloc_page(U32 pu)
         target_vir_addr.block_in_pu = blockinfo->vir_block_addr;
         target_vir_addr.page_in_block = PG_PER_BLK - blockinfo->free_page_count;
         blockinfo->free_page_count--;
+
+        if (0 == blockinfo->free_page_count)
+        {
+            blockinfo->status = BLOCK_STATUS_FULL;
+        }
     }
     else
     {
@@ -103,11 +124,15 @@ U32 gc_alloc_page(U32 pu)
         if (0xfffffffful != dst_p_blk)
         {
             blockinfo = &puinfo->block_info[dst_p_blk];
+            if (PG_PER_BLK != blockinfo->free_page_count)
+            {
+                fatalerror("free page count error in new block");
+            }
             target_vir_addr.block_in_pu = blockinfo->vir_block_addr;
-            target_vir_addr.page_in_block = PG_PER_BLK - blockinfo->free_page_count;
+            target_vir_addr.page_in_block = 0;
             blockinfo->free_page_count--;
 
-            gc_dest_block[pu] = dst_p_blk;
+            gc_dst_block[pu] = dst_p_blk;
         }
         else
         {
@@ -148,6 +173,12 @@ U32 gc_write_page(const struct ftl_req_t *write_request)
         table_update_pmt(lpn, &vir_addr);
     }
 
+    for ( ; i < LPN_PER_BUF; i++)
+    {
+        vir_addr.lpn_in_page = i;
+        table_update_rpmt(INVALID_8F, NULL, &vir_addr);
+    }
+
     flash_write_req.data_buffer_addr = write_request->buffer_addr;
     flash_write_req.spare_buffer_addr = 0; //to be continue
 
@@ -155,6 +186,26 @@ U32 gc_write_page(const struct ftl_req_t *write_request)
     
     return flash_write(&phy_addr, &flash_write_req);
 }
+
+U32 gc_search_rsv_block(U32 pu)
+{
+    U32 i;
+    U32 phy_block;
+    struct pu_info_t *puinfo;
+    puinfo = pu_info[pu];
+
+    for (i = 0; i < pBLK_PER_PLN; i++)
+    {
+        if ((BLOCK_STATUS_RSV == puinfo->block_info[i].status))
+        {
+            phy_block = i;
+            break;
+        }
+    }
+
+    return phy_block;
+}
+
 
 U32 garbage_collection(U32 pu, U32 src_v_blk)
 {
@@ -164,8 +215,11 @@ U32 garbage_collection(U32 pu, U32 src_v_blk)
     struct flash_addr_t src_v_addr;
     struct flash_addr_t src_p_addr;
     struct flash_req_t read;
-
+    U32 src_p_blk;
+    
+    src_p_blk = table_get_phy_block(pu,src_v_blk);
     gcr = &gc_req[pu];
+    pu_info[pu]->block_info[src_p_blk].status = BLOCK_STATUS_GC;
 
     for (i = 0; i < LPN_IN_BLK; i++)
     {
@@ -207,21 +261,67 @@ U32 garbage_collection(U32 pu, U32 src_v_blk)
         }
     }
 
-    dbg_print("gc erase, pu(%d) pblk(%d)\n",pu,src_p_addr.block_in_pu);
-    flash_erase(pu, src_p_addr.block_in_pu);
+    if (gcr->lpn_count > 0)
+    {
+        i = gcr->lpn_count;
+        while(i < LPN_PER_BUF)
+        {
+            *(U32*)(gcr->buffer_addr + LPN_SIZE * i) = INVALID_8F;
+            *(U32*)(gcr->buffer_addr + LPN_SIZE * i + sizeof(U32)) = INVALID_8F;
+            i++;
+        }
+        
+        gc_write_page(gcr);
+        reset_gcr(gcr);
+    }
+    
+    if (SUCCESS == flash_erase(pu, src_p_blk))
+    {
+        update_tables_after_erase(pu, src_p_blk, SUCCESS);
+    }
+    else
+    {
+        U32 new_p_blk;
+        
+        update_tables_after_erase(pu, src_p_blk, ERROR_FLASH_ERASE);
+        new_p_blk = gc_search_rsv_block(pu);
+
+        if (INVALID_8F != new_p_blk)
+        {
+            if (SUCCESS == flash_erase(pu, new_p_blk))
+            {
+                table_set_phy_block(pu, src_v_blk, new_p_blk);
+                table_set_vir_block(pu, new_p_blk, src_v_blk);
+                update_tables_after_erase(pu, src_p_blk, SUCCESS);
+            }
+            else
+            {
+                fatalerror("rsv block erase failed");
+            }
+        }
+        else
+        {
+            fatalerror("not new rsv block to use");
+        }
+    }
     
     return SUCCESS;
 }
 
 U32 try_garbage_collection(U32 pu)
 {
-    U32 src_vir_block = gc_search_source_block(pu);
+    U32 dirty_count;
+    U32 src_vir_block = gc_search_source_block(pu, &dirty_count);
 
     while(INVALID_8F != src_vir_block)
     {
-        dbg_print("gc start, pu(%d) vblk(%d)\n", pu, src_vir_block);
+        //dbg_print("gc start, pu(%d) vblk(%d)\n", pu, src_vir_block);
         garbage_collection(pu, src_vir_block);
-        src_vir_block = gc_search_source_block(pu);
+        src_vir_block = gc_search_source_block(pu, &dirty_count);
+        if (dirty_count < LPN_IN_BLK/2)
+        {
+            break;
+        }
     }
 
     return SUCCESS;

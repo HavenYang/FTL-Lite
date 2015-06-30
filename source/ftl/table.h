@@ -27,8 +27,10 @@ typedef enum write_type_e
 
 typedef enum block_status_e
 {
-    BLOCK_STATUS_FREE = 0,
+    BLOCK_STATUS_RSV = 0,
+    BLOCK_STATUS_FREE,
     BLOCK_STATUS_ALLOCATED,
+    BLOCK_STATUS_FULL,
     BLOCK_STATUS_GC,
     BLOCK_STATUS_BADBLCOK,
     BLOCK_STATUS_ALL,
@@ -146,6 +148,7 @@ void vir_to_phy_addr(const struct flash_addr_t *vir_addr_from, struct flash_addr
 U32 flash_alloc_block(U32 pu);
 U32 table_update_pmt(U32 lpn, const struct flash_addr_t *new_vir_addr);
 U32 table_lookup_pmt(U32 lpn, struct flash_addr_t *dest_vir_addr);
+U32 table_update_rpmt(U32 lpn, const struct flash_addr_t *old_addr, const struct flash_addr_t *new_addr);
 
 U32 update_tables_after_erase(U32 pu, U32 phy_block_addr, U32 erase_status);
 
