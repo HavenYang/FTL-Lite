@@ -2,7 +2,8 @@
 target = ftl-lite
 rootdir = $(pwd)
 dirs = common flash ftl test
-cflag = -c -g
+cflag = -c -g -DSIM -m32
+CC = gcc
 hflag = $(addprefix -I$(rootdir),$(dirs))
 
 src = $(foreach n,$(dirs),$(wildcard $(n)/*.c))
@@ -17,7 +18,7 @@ all:$(target)
 	echo $< compile done
 
 $(target):$(obj)
-	$(CC) $^ $(hflag) -o $@
+	$(CC) $^ $(hflag) -m32 -o $@
 
 $(obj):%.o:%.c
 	$(CC) $(cflag) $(hflag) $< -o $@
