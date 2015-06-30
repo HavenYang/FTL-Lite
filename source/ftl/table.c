@@ -267,7 +267,7 @@ U32 flash_alloc_block(U32 pu)
 
     if (0 == puinfo->free_block_count)
     {
-        return 0xfffffffful;
+        fatalerror("no more free block");
     }
     
     phy_block = puinfo->curr_block;
@@ -389,6 +389,7 @@ U32 table_update_rpmt(U32 lpn, const struct flash_addr_t *old_addr, const struct
         
         old_rpmt = &rpmt[old_pu]->block[old_blk];
 
+        /* double check */
         if (lpn != old_rpmt->lpn[old_page * LPN_PER_BUF + old_addr->lpn_in_page])
         {
             dbg_print("lpn(%d)=>vaddr(%d-%d-%d-%d),ppn(0x%x)=>rpmt->lpn(%d)\n",
@@ -405,22 +406,16 @@ U32 table_update_rpmt(U32 lpn, const struct flash_addr_t *old_addr, const struct
         old_rpmt->lpn[old_page * LPN_PER_BUF + old_addr->lpn_in_page] = 0xfffffffful;
         vbt[old_pu]->item[old_blk].lpn_dirty_count++;
 
-        /*if (LPN_IN_BLK == vbt[old_pu]->item[old_blk].lpn_dirty_count)
-        {
-            flash_erase(old_pu, vbt[old_pu]->item[old_blk].phy_block_addr);
-            dbg_print("erase a all dirty block, pu(%d) vblk(%d) pblk(%d)\n", 
-            old_pu, old_blk, vbt[old_pu]->item[old_blk].phy_block_addr);
-        }*/
     }
 
     new_rpmt = &rpmt[new_addr->pu_index]->block[new_addr->block_in_pu];
     new_rpmt->lpn[new_addr->page_in_block * LPN_PER_BUF + new_addr->lpn_in_page] = lpn;
 
-    if ((24627 == lpn)||(16610 == lpn))
+    /*if (DEBUG_LPN == lpn)
     {
         dbg_print("lpn(%d): vaddr ppn from 0x%x to 0x%x\n",lpn, old_addr->ppn, new_addr->ppn);
         debug_addr.ppn = new_addr->ppn;
-    }
+    }*/
 
     return SUCCESS;
 }

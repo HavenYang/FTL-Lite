@@ -17,6 +17,7 @@
 #include "disk_config.h"
 #include "flash_interface.h"
 #include "sim_flash.h"
+#include "sim_test.h"
 #include "table.h"
 #include "ftl.h"
 
@@ -36,6 +37,7 @@
 /* local region:  declare local variable & local function prototype           */
 /*============================================================================*/
 static U32 lpn_write_count[MAX_LPN_IN_DISK];
+static struct top_data_t top_data = {{0}};
 
 /*============================================================================*/
 /* main code region: function implement                                       */
@@ -43,7 +45,36 @@ static U32 lpn_write_count[MAX_LPN_IN_DISK];
 void sim_test_init(void)
 {
     memset(lpn_write_count, 0, sizeof(lpn_write_count));
+    memset(&top_data, 0, sizeof(top_data));
 }
+
+void sim_bd_add(struct big_data_t *bd, U32 num)
+{
+    bd->low += num;
+
+    if(bd->low < num)
+    {
+        bd->mid++;
+
+        if(0 == bd->mid)
+        {
+            bd->high++;
+        }
+    }
+}
+
+void sim_calc_user_write(U32 lpn_count)
+{
+    struct big_data_t *bd = &top_data.user_write_lpn_count;
+    sim_bd_add(bd, lpn_count);
+}
+
+void sim_calc_flash_write(U32 lpn_count)
+{
+    struct big_data_t *bd = &top_data.flash_write_lpn_count;
+    sim_bd_add(bd, lpn_count);
+}
+
 
 static void sim_set_write_data(U32 buffer, U32 lpn)
 {
@@ -147,6 +178,8 @@ void sim_write(U32 start_lpn, U32 lpn_count)
 {
     U32 lpn = start_lpn;
     U32 remain = lpn_count;
+
+    sim_calc_user_write(lpn_count);
     
     while(lpn_not_page_align(lpn) && (remain > 0))
     {
@@ -338,6 +371,18 @@ void run_test_cases(void)
     test_random_readwrite();
 }
 
+void show_top_data(void)
+{
+    dbg_print("#################################################\n");
+    
+    dbg_print("user write lpn:  0x%x 0x%x 0x%x\n", top_data.user_write_lpn_count.high,
+    top_data.user_write_lpn_count.mid, top_data.user_write_lpn_count.low);
+    
+    dbg_print("flash write lpn: 0x%x 0x%x 0x%x\n", top_data.flash_write_lpn_count.high,
+    top_data.flash_write_lpn_count.mid, top_data.flash_write_lpn_count.low);
+    
+    dbg_print("#################################################\n");
+}
 
 /*====================End of this file========================================*/
 

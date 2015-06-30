@@ -64,6 +64,7 @@ void dbg_getch(void)
 {
     U32 ulTestLoop = 0;
     printf("Fatal Error, DBG_Getch!!!\n");
+    show_top_data();
 
     while (g_ulDbgEnable)
     {

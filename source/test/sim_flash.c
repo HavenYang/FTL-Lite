@@ -171,6 +171,8 @@ U32 sim_flash_write_page(const struct flash_addr_t *phy_addr, const struct flash
     sim_check_flash_addr(phy_addr);
     sim_check_flash_req(write_req);
 
+    sim_calc_flash_write(LPN_PER_BUF);
+
     if (0 != phy_addr->lpn_in_page)
     {
         fatalerror("flash addr not page align");
