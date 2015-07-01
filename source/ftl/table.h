@@ -36,6 +36,12 @@ typedef enum block_status_e
     BLOCK_STATUS_ALL,
 }EBS;
 
+typedef enum block_type_e
+{
+    BLOCK_TYPE_USER_DATA_WRITE = 0,
+    BLOCK_TYPE_GC_WRITE,
+    BLOCK_TYPE_TABLE,
+}EBT;
 
 /* page management table item , lpn -> vir_flash_addr */
 struct pmt_item_t
@@ -119,8 +125,10 @@ struct block_info_t
 
 struct pu_info_t
 {
-    U32 curr_block:16;
-    U32 block_count:16;
+    U32 curr_user_write_block:16;
+    U32 curr_gc_write_block:16;
+    U32 total_block_count:16;
+    U32 rsv_block_count:16;
     U32 free_block_count:16;
     U32 bad_block_count:16;
     U16 bad_block_addr[MAX_BB_PER_PLN];
@@ -145,7 +153,7 @@ void init_pu_info(void);
 
 struct flash_addr_t flash_alloc_page(U32 pu);
 void vir_to_phy_addr(const struct flash_addr_t *vir_addr_from, struct flash_addr_t *phy_addr_to);
-U32 flash_alloc_block(U32 pu);
+U32 flash_alloc_block(U32 pu, EBT block_type);
 U32 table_update_pmt(U32 lpn, const struct flash_addr_t *new_vir_addr);
 U32 table_lookup_pmt(U32 lpn, struct flash_addr_t *dest_vir_addr);
 U32 table_update_rpmt(U32 lpn, const struct flash_addr_t *old_addr, const struct flash_addr_t *new_addr);
@@ -157,6 +165,9 @@ U32 table_get_vir_block(U32 pu, U32 phy_block_addr);
 void table_set_phy_block(U32 pu, U32 vir_block_addr, U32 phy_block_addr);
 U32 table_get_phy_block(U32 pu, U32 vir_block_addr);
 U32 search_a_valid_block(U32 pu, U32 start_phy_block_addr);
+
+
+void show_detail_info(void);
 
 #endif
 /*====================End of this head file===================================*/

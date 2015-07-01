@@ -326,7 +326,7 @@ void test_random_readwrite(void)
     while(running)
     {
         write_start_lpn = gen_random_number(MAX_LPN_IN_DISK);
-        write_lpn_count = gen_random_number(LPN_PER_BUF);
+        write_lpn_count = gen_random_number(LPN_PER_BUF * 8);
 
         if (write_start_lpn + write_lpn_count >= MAX_LPN_IN_DISK)
         {

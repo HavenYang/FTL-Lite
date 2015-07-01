@@ -10,8 +10,6 @@ extern struct vbt_t *vbt[MAX_PU_NUM];
 extern struct rpmt_t *rpmt[MAX_PU_NUM];
 extern struct pu_info_t *pu_info[MAX_PU_NUM];
 
-static U32 gc_dst_block[PU_NUM] = {INVALID_8F};
-
 LOCAL struct ftl_req_t gc_req[PU_NUM];
 
 
@@ -93,18 +91,19 @@ U32 gc_alloc_page(U32 pu)
     struct block_info_t *blockinfo;
     U32 dst_p_blk;
 
-    if (INVALID_8F == gc_dst_block[pu])
-    {
-        gc_dst_block[pu] = flash_alloc_block(pu);
-    }
+    puinfo = pu_info[pu];
+    dst_p_blk = puinfo->curr_gc_write_block;
 
-    dst_p_blk = gc_dst_block[pu];
+    if (INVALID_4F == dst_p_blk)
+    {
+        dst_p_blk = flash_alloc_block(pu, BLOCK_TYPE_GC_WRITE);
+    }
+    
+    blockinfo = &puinfo->block_info[dst_p_blk];
 
     target_vir_addr.pu_index = pu;
     target_vir_addr.lpn_in_page = 0;
 
-    puinfo = pu_info[pu];
-    blockinfo = &puinfo->block_info[dst_p_blk];
 
     if ((BLOCK_STATUS_ALLOCATED == blockinfo->status)&&(blockinfo->free_page_count > 0))
     {
@@ -119,7 +118,7 @@ U32 gc_alloc_page(U32 pu)
     }
     else
     {
-        dst_p_blk = flash_alloc_block(pu);
+        dst_p_blk = flash_alloc_block(pu, BLOCK_TYPE_GC_WRITE);
 
         if (0xfffffffful != dst_p_blk)
         {
@@ -131,8 +130,6 @@ U32 gc_alloc_page(U32 pu)
             target_vir_addr.block_in_pu = blockinfo->vir_block_addr;
             target_vir_addr.page_in_block = 0;
             blockinfo->free_page_count--;
-
-            gc_dst_block[pu] = dst_p_blk;
         }
         else
         {
@@ -315,14 +312,16 @@ U32 try_garbage_collection(U32 pu)
 
     while(INVALID_8F != src_vir_block)
     {
-        //dbg_print("gc start, pu(%d) vblk(%d)\n", pu, src_vir_block);
+        dbg_print("gc start, pu(%d) srcvblk(%d) dirtycount(%d)\n", pu, src_vir_block,dirty_count);
         garbage_collection(pu, src_vir_block);
         src_vir_block = gc_search_source_block(pu, &dirty_count);
-        if (dirty_count < LPN_IN_BLK/2)
+        if (dirty_count < ((LPN_IN_BLK * 3) >>2))
         {
             break;
         }
     }
+
+    gc_stop(pu);
 
     return SUCCESS;
 }
@@ -333,5 +332,7 @@ void gc_start(U32 pu)
 }
 
 void gc_stop(U32 pu)
-{}
+{
+    dbg_print("gc stop\n");
+}
 

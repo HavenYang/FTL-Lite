@@ -53,6 +53,9 @@ void sim_test_init(void);
 void run_test_cases(void);
 void show_top_data(void);
 
+void sim_calc_user_write(U32 lpn_count);
+void sim_calc_flash_write(U32 lpn_count);
+
 
 #endif
 /*====================End of this head file===================================*/

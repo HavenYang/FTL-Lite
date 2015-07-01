@@ -60,11 +60,17 @@ U32 g_device_dram_size = 0;
 /*============================================================================*/
 U32 g_ulDbgEnable = 1;
 
+static void dbg_show_all(void)
+{
+    show_top_data();
+    show_detail_info();
+}
+
 void dbg_getch(void)
 {
     U32 ulTestLoop = 0;
     printf("Fatal Error, DBG_Getch!!!\n");
-    show_top_data();
+    dbg_show_all();
 
     while (g_ulDbgEnable)
     {

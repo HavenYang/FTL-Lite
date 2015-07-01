@@ -47,6 +47,7 @@ U32 flash_write(struct flash_addr_t *phy_addr, struct flash_req_t *write_req)
     else
     {
         result = ERROR_FLASH_WRITE;
+        fatalerror("not full page wirte");
     }
 
     return result;

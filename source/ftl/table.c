@@ -215,8 +215,10 @@ void init_pu_info(void)
         {
             pu_info[pu]->bad_block_count = 0; //to be defined by bbt
             pu_info[pu]->free_block_count = 0;//BLK_PER_PLN;
-            pu_info[pu]->block_count = pBLK_PER_PLN;
-            pu_info[pu]->curr_block = 0;
+            pu_info[pu]->rsv_block_count = BB_RSV_BLOCK;
+            pu_info[pu]->total_block_count = pBLK_PER_PLN;
+            pu_info[pu]->curr_user_write_block = INVALID_4F;
+            pu_info[pu]->curr_gc_write_block = INVALID_4F;
             table_init_bba(&pu_info[pu]->bad_block_addr[0]);
             table_init_block_info(&pu_info[pu]->block_info[block]);
         }
@@ -255,7 +257,7 @@ void phy_to_vir_addr(const struct flash_addr_t *phy_addr_from, struct flash_addr
 }
 
 
-U32 flash_alloc_block(U32 pu)
+U32 flash_alloc_block(U32 pu, EBT block_type)
 {
     struct pu_info_t *puinfo;
     struct block_info_t *blockinfo;
@@ -269,10 +271,15 @@ U32 flash_alloc_block(U32 pu)
     {
         fatalerror("no more free block");
     }
-    
-    phy_block = puinfo->curr_block;
 
-    while (loop++ < pBLK_PER_PLN)//(BLOCK_STATUS_FREE != blockinfo->status)
+    // search start from this block, no matter block type
+    phy_block = puinfo->curr_user_write_block;
+    if (INVALID_4F == phy_block)
+    {
+        phy_block = 0;
+    }
+    
+    while (loop++ < pBLK_PER_PLN)
     {
         blockinfo = &puinfo->block_info[phy_block];
 
@@ -291,7 +298,19 @@ U32 flash_alloc_block(U32 pu)
 
     if (INVALID_8F != vir_block)
     {
-        puinfo->curr_block = phy_block;
+        if (BLOCK_TYPE_USER_DATA_WRITE == block_type)
+        {
+            puinfo->curr_user_write_block = phy_block;
+        }
+        else if (BLOCK_TYPE_GC_WRITE == block_type)
+        {
+            puinfo->curr_gc_write_block = phy_block;
+        }
+        else
+        {
+            fatalerror("to be continue");
+        }
+        
         puinfo->free_block_count--;
         blockinfo->status = BLOCK_STATUS_ALLOCATED;
     }
@@ -325,7 +344,12 @@ struct flash_addr_t flash_alloc_page(U32 pu)
     target_vir_addr.lpn_in_page = 0;
 
     puinfo = pu_info[pu];
-    curr_block = puinfo->curr_block;
+    curr_block = puinfo->curr_user_write_block;
+
+    if (INVALID_4F == curr_block)
+    {
+        curr_block = flash_alloc_block(pu, BLOCK_TYPE_USER_DATA_WRITE);
+    }
 
     blockinfo = &puinfo->block_info[curr_block];
 
@@ -342,7 +366,7 @@ struct flash_addr_t flash_alloc_page(U32 pu)
     }
     else
     {
-        curr_block = flash_alloc_block(pu);
+        curr_block = flash_alloc_block(pu, BLOCK_TYPE_USER_DATA_WRITE);
 
         if (puinfo->free_block_count < (FTL_RSV_BLOCK/2))
         {
@@ -383,6 +407,13 @@ U32 table_update_rpmt(U32 lpn, const struct flash_addr_t *old_addr, const struct
         {
             fatalerror("not in the same pu");
         }
+
+        if (old_addr->ppn == new_addr->ppn)
+        {
+            dbg_print("lpn(%d) ppn from %d to %d\n",lpn,old_addr->ppn,new_addr->ppn);
+            fatalerror("in the same vir_addr");
+        }
+        
         old_pu = old_addr->pu_index;
         old_blk = old_addr->block_in_pu;
         old_page = old_addr->page_in_block;
@@ -411,7 +442,7 @@ U32 table_update_rpmt(U32 lpn, const struct flash_addr_t *old_addr, const struct
     new_rpmt = &rpmt[new_addr->pu_index]->block[new_addr->block_in_pu];
     new_rpmt->lpn[new_addr->page_in_block * LPN_PER_BUF + new_addr->lpn_in_page] = lpn;
 
-    /*if (DEBUG_LPN == lpn)
+    /*if ((0 == lpn) || (49152 == lpn)) //debug lpn
     {
         dbg_print("lpn(%d): vaddr ppn from 0x%x to 0x%x\n",lpn, old_addr->ppn, new_addr->ppn);
         debug_addr.ppn = new_addr->ppn;
@@ -483,6 +514,7 @@ U32 update_tables_after_erase(U32 pu, U32 phy_block_addr, U32 erase_status)
     {
         pu_info[pu]->bad_block_addr[pu_info[pu]->bad_block_count] = phy_block_addr;
         pu_info[pu]->bad_block_count++;
+        pu_info[pu]->rsv_block_count++;
         pu_info[pu]->block_info[phy_block_addr].erase_count++;
         pu_info[pu]->block_info[phy_block_addr].status = BLOCK_STATUS_BADBLCOK;
         vbt[pu]->item[vir_block_addr].phy_block_addr = 0xffff;
@@ -537,6 +569,67 @@ U32 search_a_valid_block(U32 pu, U32 start_phy_block_addr)
     }
 
     return INVALID_8F;
+}
+
+void show_pu_info(U32 pu)
+{
+    struct pu_info_t *puinfo = pu_info[pu];
+    struct block_info_t *blockinfo;
+    U32 p_blk;
+    U32 curr_dirty_count;
+    U32 max_erase_count = 0;
+    U32 min_erase_count = 0xfffffffe;
+    U32 total_erase_count = 0;
+    U32 used_block_count = 0;
+    U32 max_dirty_count = 0;
+    U32 min_dirty_count = 0xfffffffe;
+    U32 total_dirty_count = 0;
+
+    dbg_print("####################################\n");
+    dbg_print("pu %d information:\n");
+    dbg_print("total_block_count: %d\n", puinfo->total_block_count);
+    dbg_print("bad_block_count:   %d\n", puinfo->bad_block_count);
+    dbg_print("free_block_count:  %d\n", puinfo->free_block_count);
+    dbg_print("rsv_block_count:   %d\n", puinfo->rsv_block_count);
+
+    for (p_blk = 0; p_blk < pBLK_PER_PLN; p_blk++)
+    {
+        blockinfo = &puinfo->block_info[p_blk];
+        if ((BLOCK_STATUS_RSV == blockinfo->status) || (BLOCK_STATUS_BADBLCOK == blockinfo->status))
+        {
+            continue;
+        }
+
+        used_block_count++;
+        
+        curr_dirty_count = vbt[pu]->item[blockinfo->vir_block_addr].lpn_dirty_count;
+        
+        total_dirty_count += curr_dirty_count;
+        max_dirty_count = max(curr_dirty_count, max_dirty_count);
+        min_dirty_count = min(curr_dirty_count, min_dirty_count);
+
+        total_erase_count += blockinfo->erase_count;
+        max_erase_count = max(blockinfo->erase_count, max_erase_count);
+        min_erase_count = min(blockinfo->erase_count, min_erase_count);
+    }
+    
+    dbg_print("max erase count: %d\n", max_erase_count);
+    dbg_print("min erase count: %d\n", min_erase_count);
+    dbg_print("avr erase count: %d\n", total_erase_count/used_block_count);
+    dbg_print("max dirty count: %d\n", max_dirty_count);
+    dbg_print("min dirty count: %d\n", min_dirty_count);
+    dbg_print("avr dirty count: %d\n", total_dirty_count/used_block_count);
+    
+}
+
+void show_detail_info(void)
+{
+    U32 pu;
+
+    for (pu = 0 ; pu < PU_NUM; pu++)
+    {
+        show_pu_info(pu);
+    }
 }
 
 /*====================End of this file========================================*/
