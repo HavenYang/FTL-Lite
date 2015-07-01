@@ -1,5 +1,5 @@
 
-target = ftl-lite
+target = lite
 rootdir = $(pwd)
 dirs = common flash ftl test
 cflag = -c -g -DSIM -m32
@@ -15,13 +15,15 @@ obj = $(patsubst %.c,%.o,$(src))
 #	@echo $(src)
 
 all:$(target)
-	echo $< compile done
+	@echo done!!!
 
 $(target):$(obj)
-	$(CC) $^ $(hflag) -m32 -o $@
+	@echo gen $@
+	@$(CC) $^ $(hflag) -m32 -o $@
 
 $(obj):%.o:%.c
-	$(CC) $(cflag) $(hflag) $< -o $@
+	@echo compile $<
+	@$(CC) $(cflag) $(hflag) $< -o $@
 
 
 clean:

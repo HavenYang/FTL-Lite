@@ -315,7 +315,7 @@ U32 try_garbage_collection(U32 pu)
         dbg_print("gc start, pu(%d) srcvblk(%d) dirtycount(%d)\n", pu, src_vir_block,dirty_count);
         garbage_collection(pu, src_vir_block);
         src_vir_block = gc_search_source_block(pu, &dirty_count);
-        if (dirty_count < ((LPN_IN_BLK * 3) >>2))
+        if (dirty_count < (LPN_IN_BLK/2))
         {
             break;
         }

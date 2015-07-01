@@ -72,12 +72,12 @@ void dbg_getch(void)
     printf("Fatal Error, DBG_Getch!!!\n");
     dbg_show_all();
 
-    while (g_ulDbgEnable)
-    {
-        ulTestLoop++;
-    }
+//    while (g_ulDbgEnable)
+//    {
+//        ulTestLoop++;
+//    }
     g_ulDbgEnable = 1;
-
+    getchar();
     test_env_exit();
 }
 

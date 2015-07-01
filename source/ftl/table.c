@@ -586,7 +586,7 @@ void show_pu_info(U32 pu)
     U32 total_dirty_count = 0;
 
     dbg_print("####################################\n");
-    dbg_print("pu %d information:\n");
+    dbg_print("pu %d information:\n",pu);
     dbg_print("total_block_count: %d\n", puinfo->total_block_count);
     dbg_print("bad_block_count:   %d\n", puinfo->bad_block_count);
     dbg_print("free_block_count:  %d\n", puinfo->free_block_count);
