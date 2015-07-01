@@ -48,9 +48,20 @@ U32 gc_search_source_block(U32 pu, U32* dirty_count)
     U32 vir_block = 0;
     U32 p_blk;
     U32 max_dirty_count = 0;
+    static U32 deep_gc_flag = FALSE;
 
     vbtinfo = vbt[pu];
     puinfo = pu_info[pu];
+
+    if (puinfo->free_block_count < 3)
+    {
+        deep_gc_flag = TRUE;
+        dbg_print("deep gc \n");
+    }
+    else if (puinfo->free_block_count > FTL_RSV_BLOCK/2)
+    {
+        deep_gc_flag = FALSE;
+    }
 
     for (i = 0; i < vBLK_PER_PLN; i++)
     {
@@ -77,6 +88,10 @@ U32 gc_search_source_block(U32 pu, U32* dirty_count)
     *dirty_count = max_dirty_count;
 
     if (0 == max_dirty_count)
+    {
+        vir_block = INVALID_8F;
+    }
+    else if ((FALSE == deep_gc_flag) && (max_dirty_count < LPN_IN_BLK/2))
     {
         vir_block = INVALID_8F;
     }
@@ -315,10 +330,10 @@ U32 try_garbage_collection(U32 pu)
         dbg_print("gc start, pu(%d) srcvblk(%d) dirtycount(%d)\n", pu, src_vir_block,dirty_count);
         garbage_collection(pu, src_vir_block);
         src_vir_block = gc_search_source_block(pu, &dirty_count);
-        if (dirty_count < (LPN_IN_BLK/2))
-        {
-            break;
-        }
+        //if (dirty_count < (LPN_IN_BLK/2))
+        //{
+          //  break;
+        //}
     }
 
     gc_stop(pu);

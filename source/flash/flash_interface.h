@@ -19,7 +19,7 @@
 /* #define region: constant & MACRO defined here                              */
 /*============================================================================*/
 
-#define BLK_PER_PLN_BITS          7 //10
+#define BLK_PER_PLN_BITS          9 //10
 #define BLK_PER_PLN               (1 << BLK_PER_PLN_BITS)
 #define BLK_PER_PLN_MSK           (BLK_PER_PLN - 1)
 
