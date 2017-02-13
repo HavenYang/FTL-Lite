@@ -5,5 +5,5 @@
 
 language: c
 
-script: build-and-run-test.sh
+script: ./build-and-run-test.sh
 
