@@ -1,0 +1,7 @@
+
+install: libc6-dev-i386
+
+language: c
+
+script: make
+

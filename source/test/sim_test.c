@@ -135,7 +135,7 @@ void sim_random_write_lpn(U32 lpn)
     }
 }
 
-void sim_seq_write_page(start_lpn)
+void sim_seq_write_page(U32 start_lpn)
 {
     U8 *data_buffer;
     U32 i;
@@ -349,6 +349,10 @@ void test_random_readwrite(void)
             sim_read(read_start_lpn, read_lpn_count);
         }
 
+	if (random_op_count > 100*1000)
+	{
+		running = 0;
+	}
     }
 }
 

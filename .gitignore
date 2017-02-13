@@ -35,6 +35,10 @@ Sysinfo.ini
 *.i*86
 *.x86_64
 *.hex
+lite
 
 # Debug files
 *.dSYM/
+
+# Other files
+tags
