@@ -1,7 +1,7 @@
 
-#sudo: required
+sudo: required
 
-#install: sudo apt install libc6-dev-i386
+install: sudo apt-get install libc6-dev-i386
 
 language: c
 
