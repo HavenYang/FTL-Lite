@@ -56,7 +56,7 @@ U32 gc_search_source_block(U32 pu, U32* dirty_count)
     if (puinfo->free_block_count < 3)
     {
         deep_gc_flag = TRUE;
-        dbg_print("deep gc \n");
+        ftl_dbg_print("deep gc \n");
     }
     else if (puinfo->free_block_count > FTL_RSV_BLOCK/2)
     {
@@ -327,7 +327,7 @@ U32 try_garbage_collection(U32 pu)
 
     while(INVALID_8F != src_vir_block)
     {
-        dbg_print("gc start, pu(%d) srcvblk(%d) dirtycount(%d)\n", pu, src_vir_block,dirty_count);
+        ftl_dbg_print("gc start, pu(%d) srcvblk(%d) dirtycount(%d)\n", pu, src_vir_block,dirty_count);
         garbage_collection(pu, src_vir_block);
         src_vir_block = gc_search_source_block(pu, &dirty_count);
         //if (dirty_count < (LPN_IN_BLK/2))
@@ -348,6 +348,6 @@ void gc_start(U32 pu)
 
 void gc_stop(U32 pu)
 {
-    dbg_print("gc stop\n");
+    ftl_dbg_print("gc stop\n");
 }
 

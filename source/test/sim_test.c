@@ -320,8 +320,10 @@ void test_random_readwrite(void)
     U32 write_lpn_count;
     U32 read_start_lpn;
     U32 read_lpn_count;
+    U32 total_write_lpn_count;
 
     running = 1;
+    total_write_lpn_count = 0;
     
     while(running)
     {
@@ -335,17 +337,18 @@ void test_random_readwrite(void)
 
         sim_write(write_start_lpn, write_lpn_count);
         random_op_count++;
+        total_write_lpn_count += write_lpn_count;
         
-        if (0 == random_op_count%5000)
+        if (0 == random_op_count%1000)
         {
-            dbg_print("%d random write(%d,%d)\n", random_op_count, write_start_lpn, write_lpn_count);
+            dbg_print("random write %d times totally %d lpn data\n", random_op_count, total_write_lpn_count);
             read_start_lpn = gen_random_number(MAX_LPN_IN_DISK);
             read_lpn_count = gen_random_number(MAX_LPN_IN_DISK);
             if (read_start_lpn + read_lpn_count >= MAX_LPN_IN_DISK)
             {
                 read_lpn_count = MAX_LPN_IN_DISK - read_start_lpn;
             }
-            dbg_print("%d random read(%d,%d)\n", random_op_count/5000, read_start_lpn, read_lpn_count);
+            dbg_print("%d random read(%d,%d)\n", random_op_count/1000, read_start_lpn, read_lpn_count);
             sim_read(read_start_lpn, read_lpn_count);
         }
 

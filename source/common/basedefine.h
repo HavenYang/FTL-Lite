@@ -11,6 +11,7 @@
 
 #ifdef SIM
 #include <stdio.h>
+#include <stdlib.h>
 #endif
 
 /*some type definitions*/
@@ -82,13 +83,20 @@ typedef S32 BOOL;
 
 void dbg_getch(void);
 
-
+#ifdef DEBUG
 #define fatalerror(str)     do {\
-printf("%s, line %d : %s\n",__FILE__,__LINE__, (str)); \
+printf("Error: %s, line %d : %s\n",__FILE__,__LINE__, (str)); \
 dbg_getch();\
 }while(0)
+#else
+#define fatalerror(str)     do {\
+printf("Error: %s, line %d : %s\n",__FILE__,__LINE__, (str)); \
+exit(1);\
+}while(0)
+#endif
 
 #define dbg_print printf
+#define ftl_dbg_print
 
 #define assert_null_pointer(p)  if (NULL == (p)) {fatalerror("null pointer");}
 

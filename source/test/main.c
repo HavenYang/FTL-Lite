@@ -148,6 +148,8 @@ int main(int argc, char* argv)
     ftl_init();    
     run_test_cases();
 
+    printf("ALL TESTS PASSED\n");
+
     test_env_exit();
 
     return 0;
